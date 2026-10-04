@@ -16,3 +16,5 @@
 Camera Selectorは固定版のライセンスを確認できず公開版から除外。Chromebook実機、学校Wi-Fi・管理ポリシー、認識/実機品質、40台相当は人間による検証が必要。docs/CHROMEBOOK_TEST.mdはすべてUNTESTEDから記録する。
 
 保存形式・生徒モード・検証→反映・Undo・IndexedDB復旧・Block2Bot・既存の許諾確認済み拡張を維持。新規拡張、DSL全面改修、AI API導入、依存全面更新は行っていない。
+
+初回ActionsはStretch3取得時のhash不一致で停止。記録済みhashに1文字多い誤記があり、全7アーカイブのGitHub取得版とローカル元版を展開・ファイル内容比較して同一を確認。実アーカイブのSHA-256へ訂正。ソースの版・内容は変更していない。

@@ -7,7 +7,7 @@
   "source": {
     "repository": "https://github.com/stretch3/stretch3.github.io",
     "commit": "29217c1957f88d69c440d381c84d6695dee9cfc9",
-    "archiveSha256": "cb80163457fd7bb993143d4e403ca4c918dddbba469d73b5ba69618ba377992f2"
+    "archiveSha256": "cb80163457fd7bb993143d4e403ca4c918ddbba469d73b5ba69618ba377992f2"
   },
   "gui": {
     "repository": "https://github.com/LLK/scratch-gui",

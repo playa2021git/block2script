@@ -25,7 +25,7 @@ Application source, modifications, build scripts and locked npm dependencies: ht
 
 ## Source checksums
 
-- stretch3-source: 29217c1957f88d69c440d381c84d6695dee9cfc9; SHA-256 cb80163457fd7bb993143d4e403ca4c918dddbba469d73b5ba69618ba377992f2
+- stretch3-source: 29217c1957f88d69c440d381c84d6695dee9cfc9; SHA-256 cb80163457fd7bb993143d4e403ca4c918ddbba469d73b5ba69618ba377992f2
 - scratch-gui-v3.6.18: v3.6.18; SHA-256 47e3050aa5a4a60d9517a52c29d76a6ab759f7e1c5a57c0df46417aa4c375570
 - speech2scratch: b6d0f4ed9d349d620c0ccba74acf75e90505d09b; SHA-256 33f8a192741f569dc3d878c1010d38965c4a3f21c1f3574c2e713f0ef4830f24
 - tm2scratch: d018790a8afbb2bfc793ea6b8b5ef4b4e5abbd1e; SHA-256 3153fae123a803bd4a8ae518b0fd1a96edf4cdd8e0ccbf1edd85a8fb69895a0e
