@@ -38,3 +38,5 @@ Block2Bot PNGs are project-supplied original character assets. Scratch GUI libra
 ## Additional npm license findings
 
 scratch-render-fonts 1.0.2 includes Apache-2.0 LICENSE.txt and SIL OFL-1.1 OFL.txt; both preserved. omggif 1.0.9 carries its MIT permission and Dean McNamee copyright notice in omggif.js; the header is reproduced. color-convert 0.5.3 has a MIT LICENSE even though package.json has no license field. See docs/NPM_LICENSE_INVENTORY.json for the compiled package versions and notices.
+
+The inventory additionally traverses declared runtime dependencies, including packages embedded in prebuilt ml5. The total audited closure is 852 installed package entries (a conservative superset of browser-executed code). Legacy process 0.5.2, colors 0.6.2, and commander 2.1.0 MIT texts are preserved from LICENSE, MIT-LICENSE.txt, and Readme.md respectively.
