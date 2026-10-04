@@ -1,0 +1,575 @@
+{
+  "speech2scratch": {
+    "startRecognition": {},
+    "getSpeech": {}
+  },
+  "ml2scratch": {
+    "addExample1": {},
+    "addExample2": {},
+    "addExample3": {},
+    "train": {
+      "LABEL": {
+        "type": "string",
+        "menu": "train_menu",
+        "defaultValue": "4",
+        "field": true
+      }
+    },
+    "trainAny": {
+      "LABEL": {
+        "type": "string",
+        "defaultValue": "11",
+        "field": false
+      }
+    },
+    "getLabel": {},
+    "whenReceived": {
+      "LABEL": {
+        "type": "string",
+        "menu": "received_menu",
+        "defaultValue": "any",
+        "field": true
+      }
+    },
+    "whenReceivedAny": {
+      "LABEL": {
+        "type": "string",
+        "defaultValue": "11",
+        "field": false
+      }
+    },
+    "getCountByLabel1": {},
+    "getCountByLabel2": {},
+    "getCountByLabel3": {},
+    "getCountByLabel4": {},
+    "getCountByLabel5": {},
+    "getCountByLabel6": {},
+    "getCountByLabel7": {},
+    "getCountByLabel8": {},
+    "getCountByLabel9": {},
+    "getCountByLabel10": {},
+    "getCountByLabel": {
+      "LABEL": {
+        "type": "string",
+        "defaultValue": "11",
+        "field": false
+      }
+    },
+    "reset": {
+      "LABEL": {
+        "type": "string",
+        "menu": "reset_menu",
+        "defaultValue": "all",
+        "field": true
+      }
+    },
+    "resetAny": {
+      "LABEL": {
+        "type": "string",
+        "defaultValue": "11",
+        "field": false
+      }
+    },
+    "download": {},
+    "upload": {},
+    "toggleClassification": {
+      "CLASSIFICATION_STATE": {
+        "type": "string",
+        "menu": "classification_menu",
+        "defaultValue": "off",
+        "field": true
+      }
+    },
+    "setClassificationInterval": {
+      "CLASSIFICATION_INTERVAL": {
+        "type": "string",
+        "menu": "classification_interval_menu",
+        "defaultValue": "1",
+        "field": false
+      }
+    },
+    "videoToggle": {
+      "VIDEO_STATE": {
+        "type": "string",
+        "menu": "video_menu",
+        "defaultValue": "off",
+        "field": true
+      }
+    },
+    "setVideoTransparency": {
+      "TRANSPARENCY": {
+        "type": "number",
+        "defaultValue": 50,
+        "field": false
+      }
+    },
+    "setInput": {
+      "INPUT": {
+        "type": "string",
+        "menu": "input_menu",
+        "defaultValue": "webcam",
+        "field": true
+      }
+    },
+    "switchCamera": {
+      "DEVICE": {
+        "type": "string",
+        "defaultValue": "",
+        "menu": "mediadevices",
+        "field": false
+      }
+    }
+  },
+  "posenet2scratch": {
+    "getX": {
+      "PERSON_NUMBER": {
+        "type": "string",
+        "menu": "personNumbers",
+        "defaultValue": "1",
+        "field": false
+      },
+      "PART": {
+        "type": "string",
+        "menu": "parts",
+        "defaultValue": "0",
+        "field": false
+      }
+    },
+    "getY": {
+      "PERSON_NUMBER": {
+        "type": "string",
+        "menu": "personNumbers",
+        "defaultValue": "1",
+        "field": false
+      },
+      "PART": {
+        "type": "string",
+        "menu": "parts",
+        "defaultValue": "0",
+        "field": false
+      }
+    },
+    "getPeopleCount": {},
+    "getNoseX": {},
+    "getNoseY": {},
+    "getLeftEyeX": {},
+    "getLeftEyeY": {},
+    "getRightEyeX": {},
+    "getRightEyeY": {},
+    "getLeftEarX": {},
+    "getLeftEarY": {},
+    "getRightEarX": {},
+    "getRightEarY": {},
+    "getLeftShoulderX": {},
+    "getLeftShoulderY": {},
+    "getRightShoulderX": {},
+    "getRightShoulderY": {},
+    "getLeftElbowX": {},
+    "getLeftElbowY": {},
+    "getRightElbowX": {},
+    "getRightElbowY": {},
+    "getLeftWristX": {},
+    "getLeftWristY": {},
+    "getRightWristX": {},
+    "getRightWristY": {},
+    "getLeftHipX": {},
+    "getLeftHipY": {},
+    "getRightHipX": {},
+    "getRightHipY": {},
+    "getLeftKneeX": {},
+    "getLeftKneeY": {},
+    "getRightKneeX": {},
+    "getRightKneeY": {},
+    "getLeftAnkleX": {},
+    "getLeftAnkleY": {},
+    "getRightAnkleX": {},
+    "getRightAnkleY": {},
+    "videoToggle": {
+      "VIDEO_STATE": {
+        "type": "string",
+        "menu": "videoMenu",
+        "defaultValue": "off",
+        "field": true
+      }
+    },
+    "setVideoTransparency": {
+      "TRANSPARENCY": {
+        "type": "number",
+        "defaultValue": 50,
+        "field": false
+      }
+    }
+  },
+  "tm2scratch": {
+    "whenReceived": {
+      "LABEL": {
+        "type": "string",
+        "menu": "received_menu",
+        "defaultValue": "のどれか",
+        "field": false
+      }
+    },
+    "isImageLabelDetected": {
+      "LABEL": {
+        "type": "string",
+        "menu": "image_labels_menu",
+        "defaultValue": "どれか",
+        "field": false
+      }
+    },
+    "imageLabelConfidence": {
+      "LABEL": {
+        "type": "string",
+        "menu": "image_labels_without_any_menu",
+        "defaultValue": "",
+        "field": false
+      }
+    },
+    "setImageClassificationModelURL": {
+      "URL": {
+        "type": "string",
+        "defaultValue": "https://teachablemachine.withgoogle.com/models/0rX_3hoH/",
+        "field": false
+      }
+    },
+    "classifyVideoImageBlock": {},
+    "getImageLabel": {},
+    "whenReceivedSoundLabel": {
+      "LABEL": {
+        "type": "string",
+        "menu": "received_sound_label_menu",
+        "defaultValue": "のどれか",
+        "field": false
+      }
+    },
+    "isSoundLabelDetected": {
+      "LABEL": {
+        "type": "string",
+        "menu": "sound_labels_menu",
+        "defaultValue": "どれか",
+        "field": false
+      }
+    },
+    "soundLabelConfidence": {
+      "LABEL": {
+        "type": "string",
+        "menu": "sound_labels_without_any_menu",
+        "defaultValue": "",
+        "field": false
+      }
+    },
+    "setSoundClassificationModelURL": {
+      "URL": {
+        "type": "string",
+        "defaultValue": "https://teachablemachine.withgoogle.com/models/xP0spGSB/",
+        "field": false
+      }
+    },
+    "getSoundLabel": {},
+    "toggleClassification": {
+      "CLASSIFICATION_STATE": {
+        "type": "string",
+        "menu": "classification_menu",
+        "defaultValue": "off",
+        "field": true
+      }
+    },
+    "setClassificationInterval": {
+      "CLASSIFICATION_INTERVAL": {
+        "type": "string",
+        "menu": "classification_interval_menu",
+        "defaultValue": "1",
+        "field": false
+      }
+    },
+    "setConfidenceThreshold": {
+      "CONFIDENCE_THRESHOLD": {
+        "type": "number",
+        "defaultValue": 0.5,
+        "field": false
+      }
+    },
+    "getConfidenceThreshold": {},
+    "videoToggle": {
+      "VIDEO_STATE": {
+        "type": "string",
+        "menu": "video_menu",
+        "defaultValue": "off",
+        "field": true
+      }
+    },
+    "switchCamera": {
+      "DEVICE": {
+        "type": "string",
+        "defaultValue": "",
+        "menu": "mediadevices",
+        "field": false
+      }
+    }
+  },
+  "microbitMore": {
+    "whenConnectionChanged": {
+      "STATE": {
+        "type": "string",
+        "menu": "connectionStateMenu",
+        "defaultValue": "connected",
+        "field": true
+      }
+    },
+    "whenButtonEvent": {
+      "NAME": {
+        "type": "string",
+        "menu": "buttonIDMenu",
+        "defaultValue": "A",
+        "field": true
+      },
+      "EVENT": {
+        "type": "string",
+        "menu": "buttonEventMenu",
+        "defaultValue": "DOWN",
+        "field": true
+      }
+    },
+    "isButtonPressed": {
+      "NAME": {
+        "type": "string",
+        "menu": "buttonIDMenu",
+        "defaultValue": "A",
+        "field": true
+      }
+    },
+    "whenTouchEvent": {
+      "NAME": {
+        "type": "string",
+        "menu": "touchIDMenu",
+        "defaultValue": "LOGO",
+        "field": true
+      },
+      "EVENT": {
+        "type": "string",
+        "menu": "touchEventMenu",
+        "defaultValue": "DOWN",
+        "field": true
+      }
+    },
+    "isPinTouched": {
+      "NAME": {
+        "type": "string",
+        "menu": "touchIDMenu",
+        "defaultValue": "LOGO",
+        "field": true
+      }
+    },
+    "whenGesture": {
+      "GESTURE": {
+        "type": "string",
+        "menu": "gestures",
+        "defaultValue": "SHAKE",
+        "field": true
+      }
+    },
+    "displayMatrix": {
+      "MATRIX": {
+        "type": "matrix",
+        "defaultValue": "0101010101100010101000100",
+        "field": false
+      }
+    },
+    "displayText": {
+      "TEXT": {
+        "type": "string",
+        "defaultValue": "Hello!",
+        "field": false
+      },
+      "DELAY": {
+        "type": "number",
+        "defaultValue": 120,
+        "field": false
+      }
+    },
+    "displayClear": {},
+    "getLightLevel": {},
+    "getTemperature": {},
+    "getCompassHeading": {},
+    "getPitch": {},
+    "getRoll": {},
+    "getSoundLevel": {},
+    "getMagneticForce": {
+      "AXIS": {
+        "type": "string",
+        "menu": "axis",
+        "defaultValue": "absolute",
+        "field": true
+      }
+    },
+    "getAcceleration": {
+      "AXIS": {
+        "type": "string",
+        "menu": "axis",
+        "defaultValue": "x",
+        "field": true
+      }
+    },
+    "getAnalogValue": {
+      "PIN": {
+        "type": "string",
+        "menu": "analogInPins",
+        "defaultValue": "0",
+        "field": true
+      }
+    },
+    "setPullMode": {
+      "PIN": {
+        "type": "string",
+        "menu": "gpio",
+        "defaultValue": "0",
+        "field": true
+      },
+      "MODE": {
+        "type": "string",
+        "menu": "pinMode",
+        "defaultValue": "UP",
+        "field": true
+      }
+    },
+    "isPinHigh": {
+      "PIN": {
+        "type": "string",
+        "menu": "gpio",
+        "defaultValue": "0",
+        "field": true
+      }
+    },
+    "setDigitalOut": {
+      "PIN": {
+        "type": "string",
+        "menu": "gpio",
+        "defaultValue": "0",
+        "field": true
+      },
+      "LEVEL": {
+        "type": "string",
+        "menu": "digitalValueMenu",
+        "defaultValue": "false",
+        "field": false
+      }
+    },
+    "setAnalogOut": {
+      "PIN": {
+        "type": "string",
+        "menu": "gpio",
+        "defaultValue": "0",
+        "field": true
+      },
+      "LEVEL": {
+        "type": "number",
+        "defaultValue": 0,
+        "field": false
+      }
+    },
+    "setServo": {
+      "PIN": {
+        "type": "string",
+        "menu": "gpio",
+        "defaultValue": "0",
+        "field": true
+      },
+      "ANGLE": {
+        "type": "number",
+        "defaultValue": 0,
+        "field": false
+      },
+      "RANGE": {
+        "type": "number",
+        "defaultValue": 2000,
+        "field": false
+      },
+      "CENTER": {
+        "type": "number",
+        "defaultValue": 1500,
+        "field": false
+      }
+    },
+    "playTone": {
+      "FREQ": {
+        "type": "number",
+        "defaultValue": 440,
+        "field": false
+      },
+      "VOL": {
+        "type": "number",
+        "defaultValue": 100,
+        "field": false
+      }
+    },
+    "stopTone": {},
+    "listenPinEventType": {
+      "EVENT_TYPE": {
+        "type": "string",
+        "menu": "pinEventTypeMenu",
+        "defaultValue": "NONE",
+        "field": true
+      },
+      "PIN": {
+        "type": "string",
+        "menu": "gpio",
+        "defaultValue": "0",
+        "field": true
+      }
+    },
+    "whenPinEvent": {
+      "EVENT": {
+        "type": "string",
+        "menu": "pinEventMenu",
+        "defaultValue": "PULSE_LOW",
+        "field": true
+      },
+      "PIN": {
+        "type": "string",
+        "menu": "gpio",
+        "defaultValue": "0",
+        "field": true
+      }
+    },
+    "getPinEventValue": {
+      "EVENT": {
+        "type": "string",
+        "menu": "pinEventTimestampMenu",
+        "defaultValue": "PULSE_LOW",
+        "field": true
+      },
+      "PIN": {
+        "type": "string",
+        "menu": "gpio",
+        "defaultValue": "0",
+        "field": true
+      }
+    },
+    "whenDataReceived": {
+      "LABEL": {
+        "type": "string",
+        "defaultValue": "label-01",
+        "field": false
+      }
+    },
+    "getDataLabeled": {
+      "LABEL": {
+        "type": "string",
+        "defaultValue": "label-01",
+        "field": false
+      }
+    },
+    "sendData": {
+      "LABEL": {
+        "type": "string",
+        "defaultValue": "label-01",
+        "field": false
+      },
+      "DATA": {
+        "type": "string",
+        "defaultValue": "data",
+        "field": false
+      }
+    }
+  }
+}

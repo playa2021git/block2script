@@ -1,0 +1,37 @@
+{
+  "url": "https://playa2021git.github.io/block2script/",
+  "checkedAt": "2026-10-04T21:59:33.027Z",
+  "results": [
+    {
+      "test": 1,
+      "load": true,
+      "roundtrip": "✓ 全スプライトの 42 ブロックを往復検証。ブロックデータの差はありません",
+      "blocks": 42
+    },
+    {
+      "test": 2,
+      "load": true,
+      "roundtrip": "✓ 全スプライトの 12 ブロックを往復検証。ブロックデータの差はありません",
+      "blocks": 12
+    },
+    {
+      "test": 3,
+      "load": true,
+      "roundtrip": "✓ 全スプライトの 23 ブロックを往復検証。ブロックデータの差はありません",
+      "blocks": 23
+    },
+    {
+      "test": 4,
+      "load": true,
+      "roundtrip": "✓ 全スプライトの 36 ブロックを往復検証。ブロックデータの差はありません",
+      "blocks": 36
+    },
+    {
+      "test": 5,
+      "load": true,
+      "roundtrip": "✓ 全スプライトの 15 ブロックを往復検証。ブロックデータの差はありません",
+      "blocks": 15
+    }
+  ],
+  "deviceExecution": "UNTESTED: school Chromebook, actual audio/camera/Bluetooth and model inference"
+}
