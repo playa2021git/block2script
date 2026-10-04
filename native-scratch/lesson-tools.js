@@ -1,0 +1,8 @@
+export function buildSpecification({app,base,blocks,extensions,target,source}){
+ return {formatVersion:1,app,editorBase:base,notation:'scratch.script({x:60,y:60}, () => { scratch.OPCODE({INPUT: value}); });',rules:['Output only Block2Script Script, no Markdown.','Use only listed opcodes and named inputs/fields.','Statement inputs use () => { ... }; reporters use nested scratch calls.','No let/for/if, native expressions, eval, DOM or external libraries.','Preserve existing /*@scratch ...*/ metadata.','Custom procedures require their existing mutation data.'],limits:{characters:200000,blocks:3000},saveScope:{sb3:'Applied project and extension blocks/settings; no unapplied drafts or external model/training data.',b2s:'Current sprite Script including unapplied edits.',recovery:'Project and drafts, latest 10 snapshots in this browser and origin.'},extensions,blocks,target,source};
+}
+export async function diagnoseEnvironment(win,store){
+ const nav=win.navigator,checks=[{name:'安全な接続',state:win.isSecureContext?'利用可能':'要確認',detail:win.isSecureContext?'機器APIを使える接続です。':'localhostまたはHTTPSで開いてください。'},{name:'カメラ・マイクAPI',state:nav.mediaDevices?.getUserMedia?'利用可能':'未対応',detail:'APIの有無のみ確認。機器・許可・認識品質は開始操作後に確認してください。'},{name:'音声認識API',state:win.SpeechRecognition||win.webkitSpeechRecognition?'利用可能':'未対応',detail:'Speech2Scratch用。音声合成とは別の機能です。'},{name:'Bluetooth API',state:nav.bluetooth?'利用可能':'未対応',detail:'micro:bit Moreの接続可否は実機の接続操作で確認してください。'},{name:'通信状態',state:nav.onLine?'オンライン表示':'オフライン表示',detail:'表示は外部サービスへの接続成功を保証しません。'}];
+ try{await store.list();checks.push({name:'自動保存の読込',state:'確認済み',detail:'保存領域を読み込めました。書込は作品編集後の自動保存表示で確認してください。'});}catch{checks.push({name:'自動保存の読込',state:'利用不可',detail:'.sb3とコードをファイルへ保存してください。'});}
+ return checks;
+}

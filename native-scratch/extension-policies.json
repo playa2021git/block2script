@@ -1,0 +1,95 @@
+[
+  {
+    "id": "speech2scratch",
+    "name": "Speech2Scratch",
+    "permissions": [
+      "microphone"
+    ],
+    "network": "認識サービスはブラウザー依存。通信先はブラウザーの設定を確認。",
+    "externalSave": "認識結果・マイク音声は作品データとして自動保存されません。",
+    "compatibility": "利用機能を授業端末で実行して確認してください。"
+  },
+  {
+    "id": "tm2scratch",
+    "name": "TM2Scratch",
+    "permissions": [
+      "camera",
+      "microphone"
+    ],
+    "network": "ブロックに設定したモデルURLとその関連ファイル。",
+    "externalSave": "モデルURLは保存。モデル本体は別途保存。",
+    "compatibility": "カメラを使う拡張は同じ入力映像を共有します。Camera Selectorの変更は他のカメラ拡張にも影響します。"
+  },
+  {
+    "id": "ml2scratch",
+    "name": "ML2Scratch",
+    "permissions": [
+      "camera"
+    ],
+    "network": "学習・推論ライブラリはローカル同梱。利用モデルの取得通信は授業前に確認。",
+    "externalSave": "学習データは拡張の保存機能で別途保存。",
+    "compatibility": "カメラを使う拡張は同じ入力映像を共有します。Camera Selectorの変更は他のカメラ拡張にも影響します。"
+  },
+  {
+    "id": "posenet2scratch",
+    "name": "PoseNet2Scratch",
+    "permissions": [
+      "camera"
+    ],
+    "network": "モデル取得通信は授業前に確認。",
+    "externalSave": "認識中の映像・姿勢結果は自動保存されません。",
+    "compatibility": "カメラを使う拡張は同じ入力映像を共有します。Camera Selectorの変更は他のカメラ拡張にも影響します。"
+  },
+  {
+    "id": "cameraselector",
+    "name": "Camera Selector",
+    "permissions": [
+      "camera"
+    ],
+    "network": "カメラ列挙・選択は端末内。他のカメラ拡張の通信は別途確認。",
+    "externalSave": "選択ブロックのカメラ名は保存。別端末では再選択が必要。",
+    "compatibility": "カメラを使う拡張は同じ入力映像を共有します。Camera Selectorの変更は他のカメラ拡張にも影響します。"
+  },
+  {
+    "id": "microbitMore",
+    "name": "micro:bit More",
+    "permissions": [
+      "bluetooth"
+    ],
+    "network": "接続はBluetooth。対応ファームウェアは別途準備。",
+    "externalSave": "実機状態・ファームウェアは.sb3には保存されません。",
+    "compatibility": "Bluetooth対応ブラウザーと実機・ファームウェアが必要。"
+  },
+  {
+    "id": "pen",
+    "name": "ペン",
+    "permissions": [],
+    "network": "ペン命令自身は外部通信を行いません。",
+    "externalSave": "ブロックは保存。実行で描いたペンの描画は作品の背景には保存されません。",
+    "compatibility": "利用機能を授業端末で実行して確認してください。"
+  },
+  {
+    "id": "music",
+    "name": "音楽",
+    "permissions": [],
+    "network": "命令の実行に使う音源の取得は環境で確認。",
+    "externalSave": "音符・楽器・テンポのブロックは保存。演奏結果の録音は含まれません。",
+    "compatibility": "利用機能を授業端末で実行して確認してください。"
+  },
+  {
+    "id": "text2speech",
+    "name": "音声合成",
+    "permissions": [],
+    "network": "https://synthesis-service.scratch.mit.edu",
+    "externalSave": "文章・声・言語のブロックは保存。生成音声は.sb3には含まれません。",
+    "compatibility": "利用機能を授業端末で実行して確認してください。"
+  },
+  {
+    "id": "translate",
+    "name": "翻訳",
+    "permissions": [],
+    "network": "https://translate-service.scratch.mit.edu/",
+    "externalSave": "原文・言語のブロックは保存。外部サービスの翻訳結果は自動保存されません。",
+    "compatibility": "利用機能を授業端末で実行して確認してください。"
+  }
+]

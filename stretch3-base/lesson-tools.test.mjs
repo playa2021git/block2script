@@ -1,0 +1,20 @@
+import {chromium} from './qa/node_modules/playwright/index.mjs';
+import assert from 'node:assert/strict';
+import {readFile,writeFile} from 'node:fs/promises';
+const browser=await chromium.launch({executablePath:process.env.BLOCK2SCRIPT_BROWSER||(process.platform==='win32'?'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe':undefined),headless:true});
+const page=await browser.newPage({viewport:{width:1550,height:1000}}),errors=[];
+page.on('pageerror',e=>errors.push(e.message));
+const url=process.env.BLOCK2SCRIPT_TEST_URL||'http://127.0.0.1:5173/';
+async function graph(){return page.evaluate(()=>{const n=document.querySelector('#scratch-frame').contentWindow.scratchNative;return JSON.stringify(n.vm.runtime.targets.filter(t=>t.isOriginal).map(t=>({blocks:t.blocks._blocks,variables:t.variables,comments:t.comments})));});}
+async function spec(){const p=page.waitForEvent('download');await page.locator('#save-spec').click();const d=await p;return JSON.parse(await readFile(await d.path(),'utf8'));}
+try{
+ await page.goto(url);await page.waitForFunction(()=>document.querySelector('#scratch-frame')?.contentWindow?.scratchNative?.getController()&&document.querySelector('#target').textContent.includes('スプライト'),{timeout:90000});
+ await page.evaluate(()=>{const w=document.querySelector('#scratch-frame').contentWindow;w.deviceRequests=0;w.navigator.mediaDevices.getUserMedia=()=>{w.deviceRequests++;throw Error('Unexpected media request');};});
+ await page.locator('#stretch').click();await page.locator('#extension-information summary').click();assert.equal(await page.locator('#extension-information-list section').count(),process.env.BLOCK2SCRIPT_PUBLIC_BUILD==='1'?9:10);assert.match(await page.locator('#extension-information-list').innerText(),/synthesis-service/);assert.match(await page.locator('#extension-information-list').innerText(),/別途保存/);await page.locator('#close-stretch').click();
+ const before=await graph();await page.locator('#diagnose').click();await page.waitForFunction(()=>document.querySelector('#diagnostic-results').textContent.includes('自動保存の読込'));assert.match(await page.locator('#diagnostic-results').innerText(),/音声認識API/);await page.locator('#close-diagnostic').click();assert.equal(await graph(),before);
+ await page.locator('#api summary').click();const initial=await spec();assert.ok(initial.blocks.some(b=>b.opcode==='motion_movesteps'));assert.equal(initial.blocks.some(b=>b.opcode.startsWith('pen_')),false);assert.deepEqual(initial.extensions,[]);assert.equal(await graph(),before);
+ await page.evaluate(()=>document.querySelector('#scratch-frame').contentWindow.scratchNative.vm.extensionManager.loadExtensionURL('pen'));await page.waitForFunction(()=>document.querySelector('#scratch-frame').contentWindow.scratchNative.getController().ScratchBlocks.Blocks.pen_clear);
+ const loaded=await graph(),withPen=await spec();assert.ok(withPen.blocks.some(b=>b.opcode==='pen_clear'));assert.ok(withPen.extensions.some(e=>e.id==='pen'&&e.externalSave&&e.network));assert.ok(withPen.blocks.some(b=>Object.values(b.menus).some(values=>values.length)));assert.equal(withPen.blocks.find(b=>b.opcode==='control_repeat').inputs.SUBSTACK.kind,'statement');assert.equal(await graph(),loaded);assert.equal(await page.evaluate(()=>document.querySelector('#scratch-frame').contentWindow.deviceRequests),0);
+ await page.locator('#diagnose').click();await page.waitForFunction(()=>document.querySelector('#diagnostic-results').textContent.includes('読み込み済み拡張：ペン'));await page.screenshot({path:'stretch3-base/qa/lesson-tools.png'});
+ assert.deepEqual(errors,[]);await writeFile('stretch3-base/qa/lesson-tools-result.json',JSON.stringify({pass:true,url,checks:['diagnostic API and storage results','no media request','diagnostics and schema extraction preserve project','unloaded extension omitted','loaded extension and menus exported','statement input described'],errors},null,2));console.log('Lesson diagnostics and JSON specification checks passed.');
+}finally{await browser.close();}

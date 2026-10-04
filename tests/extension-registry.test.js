@@ -1,0 +1,2 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {extensionRegistry,loadedExtensions} from '../native-scratch/extension-registry.js';
+test('registry lists ten known extensions but AI exports loaded extensions only',()=>{assert.equal(extensionRegistry(()=>false).length,10);const loaded=loadedExtensions(id=>id==='tm2scratch'||id==='translate');assert.deepEqual(loaded.map(e=>e.id),['tm2scratch','translate']);assert.ok(loaded.every(e=>e.externalSave&&e.network));assert.ok(loaded[0].commit);assert.ok(loaded[0].permissions.includes('microphone'));});

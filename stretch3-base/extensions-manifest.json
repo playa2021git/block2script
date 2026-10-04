@@ -1,0 +1,67 @@
+[
+  {
+    "id": "speech2scratch",
+    "name": "Speech2Scratch",
+    "repo": "champierre/speech2scratch",
+    "commit": "b6d0f4ed9d349d620c0ccba74acf75e90505d09b",
+    "license": "AGPL-3.0",
+    "camera": false,
+    "microphone": true,
+    "sourceURL": "https://github.com/champierre/speech2scratch/tree/b6d0f4ed9d349d620c0ccba74acf75e90505d09b",
+    "archiveSha256": "33f8a192741f569dc3d878c1010d38965c4a3f21c1f3574c2e713f0ef4830f24",
+    "implementationStatus": "BUILTIN_SOURCE_REGISTERED",
+    "testStatus": "PENDING",
+    "hardwareTestStatus": "UNTESTED"
+  },
+  {
+    "id": "tm2scratch",
+    "name": "TM2Scratch",
+    "repo": "champierre/tm2scratch",
+    "commit": "d018790a8afbb2bfc793ea6b8b5ef4b4e5abbd1e",
+    "license": "AGPL-3.0",
+    "camera": true,
+    "sourceURL": "https://github.com/champierre/tm2scratch/tree/d018790a8afbb2bfc793ea6b8b5ef4b4e5abbd1e",
+    "archiveSha256": "3153fae123a803bd4a8ae518b0fd1a96edf4cdd8e0ccbf1edd85a8fb69895a0e",
+    "implementationStatus": "BUILTIN_SOURCE_REGISTERED",
+    "testStatus": "PENDING",
+    "hardwareTestStatus": "UNTESTED"
+  },
+  {
+    "id": "ml2scratch",
+    "name": "ML2Scratch",
+    "repo": "champierre/ml2scratch",
+    "commit": "ba1ad68ebd04ec06f4992390b3ad91c1e36486cc",
+    "license": "AGPL-3.0",
+    "camera": true,
+    "sourceURL": "https://github.com/champierre/ml2scratch/tree/ba1ad68ebd04ec06f4992390b3ad91c1e36486cc",
+    "archiveSha256": "074f925ba741492574d93e63ac5eab78cd62ebe2803565da6c4c10df681ac2dc",
+    "implementationStatus": "BUILTIN_SOURCE_REGISTERED",
+    "testStatus": "PENDING",
+    "hardwareTestStatus": "UNTESTED"
+  },
+  {
+    "id": "posenet2scratch",
+    "name": "PoseNet2Scratch",
+    "repo": "champierre/posenet2scratch",
+    "commit": "94f396d749010353bc7254af0be92a2e0ef52559",
+    "license": "AGPL-3.0",
+    "camera": true,
+    "sourceURL": "https://github.com/champierre/posenet2scratch/tree/94f396d749010353bc7254af0be92a2e0ef52559",
+    "archiveSha256": "154b88ce25dc218905ec31aa85be83cb51c9fd7809343b9da88862558b8343f2",
+    "implementationStatus": "BUILTIN_SOURCE_REGISTERED",
+    "testStatus": "PENDING",
+    "hardwareTestStatus": "UNTESTED"
+  },
+  {
+    "id": "microbitMore",
+    "name": "micro:bit More",
+    "repo": "microbit-more/mbit-more-v2",
+    "commit": "7d7b216ac046f03472cfe5de267ca7db9ae0e877",
+    "license": "MIT",
+    "sourceURL": "https://github.com/microbit-more/mbit-more-v2/tree/7d7b216ac046f03472cfe5de267ca7db9ae0e877",
+    "archiveSha256": "533cd3d164c35d8b0827f1e524ac1cc40bdcb6f5c8ab43747653decfb5e9f86b",
+    "implementationStatus": "BUILTIN_SOURCE_REGISTERED",
+    "testStatus": "PENDING",
+    "hardwareTestStatus": "UNTESTED"
+  }
+]

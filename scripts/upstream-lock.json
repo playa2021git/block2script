@@ -1,0 +1,44 @@
+[
+  {
+    "name": "stretch3-source",
+    "repo": "stretch3/stretch3.github.io",
+    "ref": "29217c1957f88d69c440d381c84d6695dee9cfc9",
+    "sha256": "cb80163457fd7bb993143d4e403ca4c918dddbba469d73b5ba69618ba377992f2"
+  },
+  {
+    "name": "scratch-gui-v3.6.18",
+    "repo": "LLK/scratch-gui",
+    "ref": "v3.6.18",
+    "sha256": "47e3050aa5a4a60d9517a52c29d76a6ab759f7e1c5a57c0df46417aa4c375570"
+  },
+  {
+    "name": "speech2scratch",
+    "repo": "champierre/speech2scratch",
+    "ref": "b6d0f4ed9d349d620c0ccba74acf75e90505d09b",
+    "sha256": "33f8a192741f569dc3d878c1010d38965c4a3f21c1f3574c2e713f0ef4830f24"
+  },
+  {
+    "name": "tm2scratch",
+    "repo": "champierre/tm2scratch",
+    "ref": "d018790a8afbb2bfc793ea6b8b5ef4b4e5abbd1e",
+    "sha256": "3153fae123a803bd4a8ae518b0fd1a96edf4cdd8e0ccbf1edd85a8fb69895a0e"
+  },
+  {
+    "name": "ml2scratch",
+    "repo": "champierre/ml2scratch",
+    "ref": "ba1ad68ebd04ec06f4992390b3ad91c1e36486cc",
+    "sha256": "074f925ba741492574d93e63ac5eab78cd62ebe2803565da6c4c10df681ac2dc"
+  },
+  {
+    "name": "posenet2scratch",
+    "repo": "champierre/posenet2scratch",
+    "ref": "94f396d749010353bc7254af0be92a2e0ef52559",
+    "sha256": "154b88ce25dc218905ec31aa85be83cb51c9fd7809343b9da88862558b8343f2"
+  },
+  {
+    "name": "microbitMore",
+    "repo": "microbit-more/mbit-more-v2",
+    "ref": "7d7b216ac046f03472cfe5de267ca7db9ae0e877",
+    "sha256": "533cd3d164c35d8b0827f1e524ac1cc40bdcb6f5c8ab43747653decfb5e9f86b"
+  }
+]

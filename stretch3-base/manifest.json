@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "appName": "Block2Script",
+  "dslName": "Block2Script Script",
+  "editorBase": "Stretch3",
+  "status": "BUILT_AND_INTEGRATED_SIX_EXTENSIONS",
+  "source": {
+    "repository": "https://github.com/stretch3/stretch3.github.io",
+    "commit": "29217c1957f88d69c440d381c84d6695dee9cfc9",
+    "archiveSha256": "cb80163457fd7bb993143d4e403ca4c918dddbba469d73b5ba69618ba377992f2"
+  },
+  "gui": {
+    "repository": "https://github.com/LLK/scratch-gui",
+    "tag": "v3.6.18",
+    "archiveSha256": "47e3050aa5a4a60d9517a52c29d76a6ab759f7e1c5a57c0df46417aa4c375570",
+    "license": "BSD-3-Clause"
+  },
+  "extensionsStatus": "SIX_EXTENSIONS_PINNED_AND_INTEGRATED_REMAINING_PENDING",
+  "telemetryPolicy": "Do not apply upstream add_ga_tracking_code.sh",
+  "retrieved": "2026-10-04"
+}

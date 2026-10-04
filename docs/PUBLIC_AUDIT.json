@@ -1,0 +1,11 @@
+{
+  "date": "2026-10-05",
+  "files": 77,
+  "findings": [],
+  "notes": [
+    "Token/private key/credential assignments and local user paths scanned without exposing matched values.",
+    "Third-party public copyright attribution retained; not treated as user private information.",
+    "Binary project fixtures and original PNG assets retained.",
+    "Manual allowlist and dependency license inspection supplement this pattern scan."
+  ]
+}
