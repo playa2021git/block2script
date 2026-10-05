@@ -48,7 +48,7 @@ export function connectCorrespondence({editor,getNative,isDirty,getTargetId}){
   const document=workspace.getParentSvg().ownerDocument;
   if(!document.getElementById('b2s-correspondence-style')){
    const style=document.createElement('style');style.id='b2s-correspondence-style';
-   style.textContent='.b2s-block-correspondence > .blocklyPath {stroke:#ffe08a !important;stroke-width:3px !important;filter:drop-shadow(0 0 3px #d39436);transition:stroke-width .15s;}';
+   style.textContent='.b2s-block-correspondence > .blocklyPath {stroke:#124bd8 !important;stroke-width:4px !important;filter:drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 6px #1677ff);transition:stroke-width .15s;}';
    document.head.appendChild(style);
   }
   listener=event=>{

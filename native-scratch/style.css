@@ -6,4 +6,4 @@
 
 #backup-status{padding:6px 14px;font-size:11px;color:#a2b6ce;background:#202a3d}.recovery-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid #d8dfed}.recovery-row button{white-space:nowrap}
 
-.b2s-code-correspondence{background:#f2c15d33;outline:1px solid #f2c15d99;border-radius:3px;transition:background-color .15s}
+.b2s-code-correspondence{background:#123fa0;color:#fff !important;outline:2px solid #65b5ff;box-shadow:0 0 7px #1687ff;border-radius:3px;transition:background-color .15s}

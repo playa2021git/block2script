@@ -18,11 +18,11 @@
 
 ## Scratch → Script
 
-`native-scratch/correspondence.js` がScratch Blocksの既存workspace change listenerを使い、`ui` イベントの `selected` / `newValue` または `click` / `blockId` からblock IDを取得する。再生成後に既に選択中のブロックをもう一度クリックしても対応する。対応コードをCodeMirrorのStateField/Decorationで黄色く強調し、`EditorView.scrollIntoView` で画面内へ移動する。DOM監視や座標からのブロック推測は行わない。
+`native-scratch/correspondence.js` がScratch Blocksの既存workspace change listenerを使い、`ui` イベントの `selected` / `newValue` または `click` / `blockId` からblock IDを取得する。再生成後に既に選択中のブロックをもう一度クリックしても対応する。対応コードをCodeMirrorのStateField/Decorationで青く強調し、`EditorView.scrollIntoView` で画面内へ移動する。DOM監視や座標からのブロック推測は行わない。
 
 ## Script → Scratch
 
-CodeMirrorの `EditorView.domEventHandlers` と `posAtCoords` を使ってクリックしたコード位置を取得し、対応情報から最小の包含範囲を選ぶ。`workspace.getBlockById()` でScratchブロックを取得し、`getSvgRoot()` に専用CSSクラスを付ける。ブロック本来の色を維持し、黄色の枠と小さなglowを加える。実行用glow APIやVMスクリプトの実行は使わない。
+CodeMirrorの `EditorView.domEventHandlers` と `posAtCoords` を使ってクリックしたコード位置を取得し、対応情報から最小の包含範囲を選ぶ。`workspace.getBlockById()` でScratchブロックを取得し、`getSvgRoot()` に専用CSSクラスを付ける。ブロック本来の色を維持し、濃い青の太い枠と白・明るい青のglowを加える。実行用glow APIやVMスクリプトの実行は使わない。
 
 Scratchワークスペースの自動スクロールは初期版では追加していない。画面外のブロックにも対応は付くため、必要に応じてワークスペースをスクロールする。
 
@@ -57,7 +57,7 @@ Scratchワークスペースの自動スクロールは初期版では追加し�
 ## Chromebook再テスト手順
 
 1. 更新版を再読込。上部の3ボタンが消え、左の「ファイル」と拡張追加ボタンが使えることを確認。
-2. 同じ命令を2つ以上置き、順に選ぶ。それぞれ違うコード箇所が黄色くなり、コードをクリックすると対応したブロック1つだけに枠が付くことを確認。
+2. 同じ命令を2つ以上置き、順に選ぶ。それぞれ違うコード箇所が青くなり、コードをクリックすると対応したブロック1つだけに枠が付くことを確認。
 3. 「もし」/繰り返し、条件内のセンサーレポーター、内部の命令を個別に選ぶ。親の全体範囲と子の範囲が区別されることを確認。
 4. ブロックを追加・削除・編集し、コード位置が変わっても対応が正しいことを確認。スプライト・作品切替で旧ハイライトが消えることを確認。
 5. Scriptを編集したらハイライトが消えること、検証・反映後に再び対応することを確認。「ファイル」で.sb3を保存し、新規タブへ読込後にも対応を確認。
