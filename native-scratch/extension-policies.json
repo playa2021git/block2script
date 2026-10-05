@@ -88,7 +88,7 @@
     "id": "translate",
     "name": "翻訳",
     "permissions": [],
-    "network": "https://translate-service.scratch.mit.edu/",
+    "network": "https://scratch-translate-proxy.junya-119.workers.dev/",
     "externalSave": "原文・言語のブロックは保存。外部サービスの翻訳結果は自動保存されません。",
     "compatibility": "利用機能を授業端末で実行して確認してください。"
   }

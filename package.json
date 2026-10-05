@@ -11,6 +11,7 @@
     "setup:native": "node native-scratch/setup.mjs",
     "build:stretch3": "node stretch3-base/build.mjs",
     "test:standard-extensions": "node stretch3-base/standard-extensions.test.mjs",
+    "test:chromebook-priority-a": "node stretch3-base/chromebook-priority-a.test.mjs",
     "test:lesson-tools": "node stretch3-base/lesson-tools.test.mjs",
     "test:robot": "node stretch3-base/robot.test.mjs",
     "build:pages": "node scripts/build-pages.mjs",

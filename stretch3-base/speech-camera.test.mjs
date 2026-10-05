@@ -53,13 +53,13 @@ try{
  assert.equal(speech.starts,1);assert.equal(speech.text,'音声認識のテスト');
  await page.evaluate(label=>{const w=document.querySelector('#scratch-frame').contentWindow;w.testCameraSelection=w.scratchNative.vm.runtime._primitives.cameraselector_selectCamera({LIST:label});},label);
  await page.waitForTimeout(250);
- assert.equal(await page.evaluate(()=>document.querySelector('#scratch-frame').contentWindow.testDevices.mediaRequests.length),0,'Camera selection bypassed explicit start');
+ assert.ok(await page.evaluate(()=>document.querySelector('#scratch-frame').contentWindow.testDevices.mediaRequests.length)>0,'Camera selection should start the native camera');
  await page.locator('#stretch').click();await page.locator('#start-camera').click();
  await page.waitForFunction(()=>document.querySelector('#stretch-status').textContent==='カメラを開始しました',{timeout:20000});
  await page.waitForFunction(()=>{const w=document.querySelector('#scratch-frame').contentWindow;return w.scratchNative.vm.runtime.ioDevices.video.provider._track?.getCapabilities().deviceId==='bbbb22223333';},{timeout:20000});
  await page.evaluate(()=>document.querySelector('#scratch-frame').contentWindow.testCameraSelection);
  await page.locator('#close-stretch').click();
- // Further calls to enableVideo must resolve after the first explicit start.
+ // Native enableVideo remains callable after camera selection and optional start.
  await page.evaluate(()=>Promise.race([document.querySelector('#scratch-frame').contentWindow.scratchNative.vm.runtime.ioDevices.video.enableVideo(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Video gate did not open')),3000))]));
  const dlPromise=page.waitForEvent('download');await page.locator('#save').click();const dl=await dlPromise;await dl.saveAs('stretch3-base/qa/speech-camera-project.sb3');
  const fresh=await context.newPage();await ready(fresh);await fresh.locator('#file').setInputFiles('stretch3-base/qa/speech-camera-project.sb3');await fresh.waitForFunction(()=>document.querySelector('#status').textContent==='Scratchプロジェクトを読み込みました',{timeout:90000});
@@ -73,6 +73,6 @@ try{
  const unsupportedText=await noSpeech.evaluate(()=>{const r=document.querySelector('#scratch-frame').contentWindow.scratchNative.vm.runtime;r._primitives.speech2scratch_startRecognition({});return r._primitives.speech2scratch_getSpeech({});});
  assert.match(unsupportedText,/対応していません/);await unsupported.close();
  assert.deepEqual(errors,[]);assert.deepEqual(remoteML,[]);
- await writeFile('stretch3-base/qa/speech-camera-result.json',JSON.stringify({pass:true,checks:['both extension dialogs','Script conversion and roundtrip','microphone/camera deferred on add and reload','mock speech result and duplicate-start guard','mock two-camera selection after explicit start','video gate remains open after start','fresh-page sb3 native extension restoration and camera label preservation','unsupported speech API','unsupported camera permission query'],realMicrophoneRecognition:'UNTESTED',physicalCameraSwitch:'UNTESTED',errors},null,2));
+ await writeFile('stretch3-base/qa/speech-camera-result.json',JSON.stringify({pass:true,checks:['both extension dialogs','Script conversion and roundtrip','speech and Camera Selector do not request devices on add/reload','mock speech result and duplicate-start guard','camera selection starts native video without custom start','optional camera start remains callable','fresh-page sb3 native extension restoration and camera label preservation','unsupported speech API','unsupported camera permission query'],realMicrophoneRecognition:'UNTESTED',physicalCameraSwitch:'UNTESTED',errors},null,2));
  console.log('Speech2Scratch and Camera Selector browser integration checks passed; mocked devices only.');
 }finally{await browser.close();}
