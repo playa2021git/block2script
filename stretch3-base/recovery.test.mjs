@@ -25,8 +25,17 @@ try{
  await page.locator('#demo').click();await page.locator('#apply').click();await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('反映しました'));
  const original=await page.evaluate(()=>JSON.parse(document.querySelector('#scratch-frame').contentWindow.scratchNative.vm.toJSON()));
  const draft='let unfinished =';await page.locator('.cm-content').click();await page.keyboard.press('Control+a');await page.keyboard.insertText(draft);await page.waitForTimeout(2000);
- const savedHandle=await page.waitForFunction(async draft=>{const db=await new Promise(resolve=>{const request=indexedDB.open('block2script-recovery',1);request.onsuccess=()=>resolve(request.result);});try{return await new Promise(resolve=>{const request=db.transaction('snapshots','readonly').objectStore('snapshots').getAll();request.onsuccess=()=>resolve(request.result.filter(snapshot=>snapshot.entries.some(entry=>entry.source===draft)).sort((a,b)=>b.id-a.id)[0]||false);});}finally{db.close();}},draft,{timeout:30000});
- const saved=await savedHandle.jsonValue();assert.ok(saved,'Unapplied draft was not autosaved');
+ // waitForFunction polls synchronous truthiness; an async predicate is a truthy Promise.
+ // Await each IndexedDB read in Node before deciding whether the snapshot exists.
+ let saved;const deadline=Date.now()+30000;
+ while(!saved&&Date.now()<deadline){
+  saved=await page.evaluate(async draft=>{
+   const db=await new Promise((resolve,reject)=>{const request=indexedDB.open('block2script-recovery',1);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
+   try{return await new Promise((resolve,reject)=>{const request=db.transaction('snapshots','readonly').objectStore('snapshots').getAll();request.onsuccess=()=>resolve(request.result.filter(snapshot=>snapshot.entries.some(entry=>entry.source===draft)).sort((a,b)=>b.id-a.id)[0]||null);request.onerror=()=>reject(request.error);});}finally{db.close();}
+  },draft);
+  if(!saved)await page.waitForTimeout(250);
+ }
+ assert.ok(saved,'Unapplied draft was not autosaved');
  await context.close();context=await chromium.launchPersistentContext(profile,options);await mockCamera(context);page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await ready();
  await page.locator('#recover').click();const row=page.locator('[data-snapshot-id="'+saved.id+'"]');await row.locator('button').click();await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('作品と未反映コードを復旧しました'),{timeout:90000});
  assert.equal(await page.locator('.cm-content').innerText(),draft);assert.equal(await page.locator('#apply').isDisabled(),true);assert.equal(await page.locator('#mode').inputValue(),'student');
