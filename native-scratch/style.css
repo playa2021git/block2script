@@ -5,3 +5,5 @@
 #mode-controls{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;font-size:12px;background:#202a3d}#mode-controls select{background:#303c52;color:#dde6f7;border:1px solid #4b5970;border-radius:4px;padding:3px}#preview{padding:10px 14px;background:#2d3549;color:#e2d3ff;font-size:12px;line-height:1.7;border-top:1px solid #49546b}#preview[hidden]{display:none}#status{white-space:pre-wrap;max-height:160px;overflow:auto}.panel-head{height:auto;min-height:48px;flex-wrap:wrap;padding:8px 12px;gap:6px}.panel-head button{margin-left:0}#copy-repair{margin-top:6px}
 
 #backup-status{padding:6px 14px;font-size:11px;color:#a2b6ce;background:#202a3d}.recovery-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid #d8dfed}.recovery-row button{white-space:nowrap}
+
+.b2s-code-correspondence{background:#f2c15d33;outline:1px solid #f2c15d99;border-radius:3px;transition:background-color .15s}

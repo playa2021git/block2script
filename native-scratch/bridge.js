@@ -5,22 +5,35 @@ const primitive={math_number:'NUM',math_integer:'NUM',math_whole_number:'NUM',ma
 const literalCode=v=>JSON.stringify(v);
 const method=opcode=>/^[a-zA-Z_$][\w$]*$/.test(opcode)?`scratch.${opcode}`:`scratch[${literalCode(opcode)}]`;
 const cleanMeta=b=>Object.fromEntries(Object.entries(b).filter(([k])=>!['opcode','inputs','fields','next','parent','topLevel','x','y','shadow'].includes(k)));
-export function exportCode(blocks,scripts){
+// Compose ranges alongside text: IDs come from VM blocks, never opcode searches.
+const fragment=(text,ranges=[])=>({text,ranges});
+function joinFragments(parts,separator=''){
+ let text='';const ranges=[];
+ for(const [i,part] of parts.entries()){
+  if(i)text+=separator;
+  const offset=text.length;
+  ranges.push(...part.ranges.map(range=>({...range,startOffset:range.startOffset+offset,endOffset:range.endOffset+offset})));
+  text+=part.text;
+ }
+ return fragment(text,ranges);
+}
+export function exportCode(blocks,scripts){return exportCodeWithMap(blocks,scripts).code;}
+export function exportCodeWithMap(blocks,scripts,targetId=null){
  const visited=new Set();
  function call(id,depth,chainSeen=new Set()){
   const b=blocks[id];if(!b)throw new Error(`接続先ブロック ${id} がありません`);
   if(chainSeen.has(id))throw new Error('循環したブロック接続を検出しました');chainSeen.add(id);visited.add(id);
   const args=[];
   for(const [key,input] of Object.entries(b.inputs??{})){
-   let code='null';const child=blocks[input.block];
+   let code=fragment('null');const child=blocks[input.block];
    if(child){
-    if(key.startsWith('SUBSTACK'))code=`() => {\n${stack(input.block,depth+1,new Set(chainSeen))}\n${'  '.repeat(depth)}}`;
-    else if(child.shadow&&primitive[child.opcode]){visited.add(child.id);code=literalCode(child.fields[primitive[child.opcode]].value);}
+    if(key.startsWith('SUBSTACK'))code=joinFragments([fragment('() => {\n'),stack(input.block,depth+1,new Set(chainSeen)),fragment(`\n${'  '.repeat(depth)}}`)]);
+    else if(child.shadow&&primitive[child.opcode]){visited.add(child.id);const text=literalCode(child.fields[primitive[child.opcode]].value);code=fragment(text,[{blockId:child.id,startOffset:0,endOffset:text.length}]);}
     else code=call(input.block,depth,new Set(chainSeen));
    }
-   args.push(`${JSON.stringify(key)}: ${code}`);
+   args.push(joinFragments([fragment(`${JSON.stringify(key)}: `),code]));
   }
-  for(const [key,field] of Object.entries(b.fields??{}))args.push(`${JSON.stringify(key)}: ${literalCode(field.value)}`);
+  for(const [key,field] of Object.entries(b.fields??{}))args.push(fragment(`${JSON.stringify(key)}: ${literalCode(field.value)}`));
   const meta=cleanMeta(b);delete meta.id;meta.id=b.id;
   if(b.shadow)meta.shadow=true;
   // Keep shadow definitions in the source too, so pasted code remains self-contained.
@@ -30,13 +43,19 @@ export function exportCode(blocks,scripts){
   }
   if(Object.keys(shadows).length)meta.shadows=shadows;
   const compactMeta=JSON.stringify(meta).replaceAll('*/','*\\u002f');
-  return `${method(b.opcode)}({${args.join(', ')}}) /*@scratch ${compactMeta}*/`;
+  const result=joinFragments([fragment(`${method(b.opcode)}({`),joinFragments(args,', '),fragment('})')]);
+  result.ranges.push({blockId:id,startOffset:0,endOffset:result.text.length});
+  result.text+=` /*@scratch ${compactMeta}*/`;
+  return result;
  }
  function stack(id,depth,seen=new Set()){
-  const lines=[];while(id){if(seen.has(id))throw new Error('循環したブロック接続を検出しました');lines.push('  '.repeat(depth)+call(id,depth,new Set(seen))+';');seen.add(id);id=blocks[id].next;}return lines.join('\n');
+  const lines=[];while(id){if(seen.has(id))throw new Error('循環したブロック接続を検出しました');lines.push(joinFragments([fragment('  '.repeat(depth)),call(id,depth,new Set(seen)),fragment(';')]));seen.add(id);id=blocks[id].next;}return joinFragments(lines,'\n');
  }
  const roots=scripts?.length?scripts:Object.values(blocks).filter(b=>b.topLevel&&!b.shadow).map(b=>b.id);
- return roots.filter(id=>blocks[id]).map(id=>`scratch.script(${JSON.stringify({x:blocks[id].x??30,y:blocks[id].y??30})}, () => {\n${stack(id,1)}\n});`).join('\n\n');
+ const result=joinFragments(roots.filter(id=>blocks[id]).map(id=>joinFragments([fragment(`scratch.script(${JSON.stringify({x:blocks[id].x??30,y:blocks[id].y??30})}, () => {\n`),stack(id,1),fragment('\n});')])),'\n\n');
+ const lineStarts=[0];for(let i=0;i<result.text.length;i++)if(result.text[i]==='\n')lineStarts.push(i+1);
+ const lineAt=offset=>{let low=0,high=lineStarts.length;while(low<high){const mid=(low+high)>>>1;if(lineStarts[mid]<=offset)low=mid+1;else high=mid;}return low;};
+ return {code:result.text,ranges:result.ranges.map(range=>({...range,targetId,startLine:lineAt(range.startOffset),endLine:lineAt(range.endOffset)}))};
 }
 
 export function compileCode(code,{base={},schema=()=>null,uid=()=>crypto.randomUUID()}={}){

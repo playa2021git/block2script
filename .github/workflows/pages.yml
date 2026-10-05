@@ -27,9 +27,13 @@ jobs:
       - run: npm ci --prefix stretch3-base/qa
       - run: ./stretch3-base/qa/node_modules/.bin/playwright install --with-deps chromium
       - name: Pages subpath smoke test
+        env:
+          BLOCK2SCRIPT_TEST_URL: http://127.0.0.1:5175/block2script/
         run: |
           node scripts/serve-pages.mjs &
           node stretch3-base/pages-smoke.test.mjs
+          node stretch3-base/correspondence.test.mjs
+          node stretch3-base/chromebook-priority-a.test.mjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -1,3 +1,4 @@
+import {saveNative,loadNative} from '../tests/browser-native-ui.mjs';
 import {chromium} from './qa/node_modules/playwright/index.mjs';
 import assert from 'node:assert/strict';
 import {writeFile} from 'node:fs/promises';
@@ -28,8 +29,8 @@ try{
  await page.locator('#apply').click();await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('反映しました'));
  await page.locator('#verify').click();assert.match(await page.locator('#status').textContent(),/差はありません/);
  const applied=await graph(page);
- const pending=page.waitForEvent('download');await page.locator('#save').click();const download=await pending;await download.saveAs('stretch3-base/qa/standard-extensions.sb3');
- const fresh=await context.newPage();await ready(fresh);await fresh.locator('#file').setInputFiles('stretch3-base/qa/standard-extensions.sb3');await fresh.waitForFunction(()=>document.querySelector('#status').textContent==='Scratchプロジェクトを読み込みました',{timeout:90000});
+ const pending=page.waitForEvent('download');await saveNative(page);const download=await pending;await download.saveAs('stretch3-base/qa/standard-extensions.sb3');
+ const fresh=await context.newPage();await ready(fresh);await loadNative(fresh,'stretch3-base/qa/standard-extensions.sb3');
  const restored=await fresh.evaluate(ids=>{const vm=document.querySelector('#scratch-frame').contentWindow.scratchNative.vm;return {loaded:ids.map(id=>vm.extensionManager.isExtensionLoaded(id)),blocks:vm.editingTarget.blocks._blocks};},ids);
  assert.ok(restored.loaded.every(Boolean));assert.deepEqual(canonical(restored.blocks),canonical(JSON.parse(applied)));
  await fresh.locator('#verify').click();assert.match(await fresh.locator('#status').textContent(),/差はありません/);

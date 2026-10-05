@@ -1,3 +1,4 @@
+import {saveNative,loadNative,addNative} from '../tests/browser-native-ui.mjs';
 import {chromium} from './qa/node_modules/playwright/index.mjs';
 import assert from 'node:assert/strict';
 import {writeFile} from 'node:fs/promises';
@@ -30,7 +31,7 @@ context.on('page',p=>{p.on('pageerror',e=>errors.push(e.message));p.on('request'
 page.on('pageerror',e=>errors.push(e.message));
 const url=process.env.BLOCK2SCRIPT_TEST_URL||'http://127.0.0.1:5173/';
 async function ready(p){await p.goto(url);await p.waitForFunction(()=>document.querySelector('#scratch-frame')?.contentWindow?.scratchNative?.vm?.editingTarget,{timeout:120000});await p.waitForFunction(()=>document.querySelector('#target').textContent.includes('スプライト'));}
-async function add(p,name){await p.locator('#stretch').click();await p.locator('#stretch-choices button').filter({hasText:name}).click();await p.waitForFunction(()=>document.querySelector('#stretch-status').textContent.includes('追加しました'));await p.locator('#close-stretch').click();}
+async function add(p,name){await addNative(p,name);await p.waitForFunction(()=>document.querySelector('#scratch-frame').contentWindow.scratchNative.vm.extensionManager.isExtensionLoaded('speech2scratch'));}
 try{
  await ready(page);await add(page,'Speech2Scratch');await add(page,'Camera Selector');
  await page.waitForTimeout(500);
@@ -54,15 +55,14 @@ try{
  await page.evaluate(label=>{const w=document.querySelector('#scratch-frame').contentWindow;w.testCameraSelection=w.scratchNative.vm.runtime._primitives.cameraselector_selectCamera({LIST:label});},label);
  await page.waitForTimeout(250);
  assert.ok(await page.evaluate(()=>document.querySelector('#scratch-frame').contentWindow.testDevices.mediaRequests.length)>0,'Camera selection should start the native camera');
- await page.locator('#stretch').click();await page.locator('#start-camera').click();
- await page.waitForFunction(()=>document.querySelector('#stretch-status').textContent==='カメラを開始しました',{timeout:20000});
+
  await page.waitForFunction(()=>{const w=document.querySelector('#scratch-frame').contentWindow;return w.scratchNative.vm.runtime.ioDevices.video.provider._track?.getCapabilities().deviceId==='bbbb22223333';},{timeout:20000});
  await page.evaluate(()=>document.querySelector('#scratch-frame').contentWindow.testCameraSelection);
- await page.locator('#close-stretch').click();
+
  // Native enableVideo remains callable after camera selection and optional start.
  await page.evaluate(()=>Promise.race([document.querySelector('#scratch-frame').contentWindow.scratchNative.vm.runtime.ioDevices.video.enableVideo(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Video gate did not open')),3000))]));
- const dlPromise=page.waitForEvent('download');await page.locator('#save').click();const dl=await dlPromise;await dl.saveAs('stretch3-base/qa/speech-camera-project.sb3');
- const fresh=await context.newPage();await ready(fresh);await fresh.locator('#file').setInputFiles('stretch3-base/qa/speech-camera-project.sb3');await fresh.waitForFunction(()=>document.querySelector('#status').textContent==='Scratchプロジェクトを読み込みました',{timeout:90000});
+ const dlPromise=page.waitForEvent('download');await saveNative(page);const dl=await dlPromise;await dl.saveAs('stretch3-base/qa/speech-camera-project.sb3');
+ const fresh=await context.newPage();await ready(fresh);await loadNative(fresh,'stretch3-base/qa/speech-camera-project.sb3');
  const restored=await fresh.evaluate(()=>{const w=document.querySelector('#scratch-frame').contentWindow;return {speech:w.scratchNative.vm.extensionManager.isExtensionLoaded('speech2scratch'),camera:w.scratchNative.vm.extensionManager.isExtensionLoaded('cameraselector'),blocks:w.scratchNative.vm.editingTarget.blocks._blocks,requests:w.testDevices.mediaRequests.length,starts:w.testDevices.speechStarts};});
  assert.ok(restored.speech&&restored.camera);assert.ok(JSON.stringify(restored.blocks).includes(label));assert.equal(restored.requests,0);assert.equal(restored.starts,0);
  await fresh.locator('#verify').click();assert.match(await fresh.locator('#status').textContent(),/差はありません/);

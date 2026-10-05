@@ -1,3 +1,4 @@
+import {loadNative,mockCamera} from '../tests/browser-native-ui.mjs';
 import {chromium} from './qa/node_modules/playwright/index.mjs';
 import assert from 'node:assert/strict';
 import {resolve} from 'node:path';
@@ -5,8 +6,8 @@ import {writeFile} from 'node:fs/promises';
 const profile=resolve('stretch3-base/qa/recovery-profile');
 const options={executablePath:process.env.BLOCK2SCRIPT_BROWSER||(process.platform==='win32'?'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe':undefined),headless:true,viewport:{width:1550,height:1000}};
 const appURL=process.env.BLOCK2SCRIPT_TEST_URL||'http://127.0.0.1:5173/';
-const moduleURL=new URL(process.env.BLOCK2SCRIPT_TEST_URL?'source/recovery.js':'native-scratch/recovery.js',appURL).href;
-let context=await chromium.launchPersistentContext(profile,options);let page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+const moduleURL=new URL(new URL(appURL).pathname.includes('/block2script/')?'source/recovery.js':'native-scratch/recovery.js',appURL).href;
+let context=await chromium.launchPersistentContext(profile,options);await mockCamera(context);let page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
 // Scratch/Blockly normalizes numeric shadow values from numbers to strings.
 // Keep the full project comparison, canonicalizing only numeric input descriptors.
 function normalizeProject(project){
@@ -20,12 +21,13 @@ async function records(){return page.evaluate(async()=>{const db=await new Promi
 try{
  await ready();
  await page.evaluate(()=>new Promise((resolve,reject)=>{const req=indexedDB.deleteDatabase('block2script-recovery');req.onsuccess=()=>resolve();req.onerror=()=>reject(req.error);req.onblocked=()=>reject(new Error('blocked'));}));
- await page.locator('#file').setInputFiles('tests/fixtures/stretch-three.sb3');await page.waitForFunction(()=>document.querySelector('#status').textContent==='Scratchプロジェクトを読み込みました',{timeout:90000});
+ await loadNative(page,'tests/fixtures/stretch-three.sb3');
  await page.locator('#demo').click();await page.locator('#apply').click();await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('反映しました'));
  const original=await page.evaluate(()=>JSON.parse(document.querySelector('#scratch-frame').contentWindow.scratchNative.vm.toJSON()));
  const draft='let unfinished =';await page.locator('.cm-content').click();await page.keyboard.press('Control+a');await page.keyboard.insertText(draft);await page.waitForTimeout(2000);
+ await page.waitForFunction(async draft=>{const db=await new Promise(resolve=>{const request=indexedDB.open('block2script-recovery',1);request.onsuccess=()=>resolve(request.result);});try{return await new Promise(resolve=>{const request=db.transaction('snapshots','readonly').objectStore('snapshots').getAll();request.onsuccess=()=>resolve(request.result.some(snapshot=>snapshot.entries.some(entry=>entry.source===draft)));});}finally{db.close();}},draft,{timeout:30000});
  const saved=(await records()).filter(s=>s.entries.some(e=>e.source===draft)).sort((a,b)=>b.id-a.id)[0];assert.ok(saved,'Unapplied draft was not autosaved');
- await context.close();context=await chromium.launchPersistentContext(profile,options);page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await ready();
+ await context.close();context=await chromium.launchPersistentContext(profile,options);await mockCamera(context);page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await ready();
  await page.locator('#recover').click();const row=page.locator('[data-snapshot-id="'+saved.id+'"]');await row.locator('button').click();await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('作品と未反映コードを復旧しました'),{timeout:90000});
  assert.equal(await page.locator('.cm-content').innerText(),draft);assert.equal(await page.locator('#apply').isDisabled(),true);assert.equal(await page.locator('#mode').inputValue(),'student');
  const restored=await page.evaluate(()=>JSON.parse(document.querySelector('#scratch-frame').contentWindow.scratchNative.vm.toJSON()));assert.deepEqual(normalizeProject(restored),normalizeProject(original),'Project changed on recovery');

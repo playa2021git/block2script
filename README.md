@@ -4,7 +4,7 @@
 
 Stretch3を基盤とした Blocks ⇄ Script 学習環境です。ブロックとBlock2Script Scriptは同じVMを編集します。一般JavaScript実行環境ではありません。
 
-公開予定：[GitHub Pages](https://playa2021git.github.io/block2script/) ／ [ソース](https://github.com/playa2021git/block2script)
+Chromebook検証用：[GitHub Pages](https://playa2021git.github.io/block2script/) ／ [ソース](https://github.com/playa2021git/block2script)
 
 Scratch FoundationおよびMITの公式製品・公認製品ではありません。Scratch、Stretch3などの名称・商標は各権利者に帰属します。上流著作権表示を維持し、初期スプライトは独自のBlock2Botです。
 
@@ -13,7 +13,8 @@ Scratch FoundationおよびMITの公式製品・公認製品ではありませ�
 1. ブロックを編集するとScriptが表示されます。AI用仕様はコピー／JSON保存できます。外部AIへの直接接続はありません。
 2. Scriptを貼り「検証」で対象・ブロック数を確認してから「Scratchへ反映」。緑の旗で実行します。
 3. 「コード反映を戻す」は最大30件。先生・開発モードの自動反映は明示的に選択します。
-4. .sb3は反映済み作品、.b2sは現在のスプライトのScriptを保存。生徒モードは保存時に草稿を自動反映しません。
+4. .sb3の読込・保存はScratchの「ファイル」、拡張追加は左下の標準ボタンを使います。.sb3は反映済み作品、.b2sは現在のスプライトのScriptを保存。未反映の草稿は.sb3に含まれません。
+5. ブロックを選択すると対応するScript範囲が、Scriptをクリックすると対応ブロックが強調されます。未反映コードの編集中はハイライトを解除します。
 
 未反映コードは.sb3に入りません。IndexedDBは作品と草稿をこのブラウザー・このアドレスに10世代保存し「復旧」で戻せます。別端末への移動にはファイル保存が必要です。外部モデル本体・ML2Scratch学習データ・実機状態は.sb3外です。作品と全草稿の追加パッケージは未実装。
 
@@ -23,11 +24,11 @@ Scratch FoundationおよびMITの公式製品・公認製品ではありませ�
 
 **Camera Selector is temporarily excluded from the public build.** 固定上流ソースのライセンス宣言を確認できないため、公開ソース・ビルド・一覧から除外します。
 
-代表ブロックのScript往復・保存再読込は、全命令・全実機・授業確認完了とは異なります。音声出力はユーザー確認報告あり。実カメラ認識・実マイク認識・micro:bit通信・Chromebook学校環境は未確認です。
+2026-10-05の利用者によるChromebook実機検証では、翻訳・カメラ・ML2Scratch学習と処理・TMモデルロード・PoseNet人数/鼻位置が成功。micro:bit More・マイク・音声認識・合成音声も実機成功の報告があります。代表ブロックの往復・保存再読込や実機結果は、全命令・全端末での動作保証ではありません。
 
 ## ブラウザー権限と通信
 
-起動だけでは機器権限を要求しません。カメラは「カメラを開始」、マイク認識は開始ブロック、Bluetoothは接続操作で要求します。Bluetoothは対応ブラウザーとファームウェアが必要です。授業前診断はAPI等の基本確認で、実機やサービス到達性の保証ではありません。学校管理ポリシーで禁止された機能は利用できません。
+空の作品の起動だけでは機器権限を要求しません。カメラ拡張の追加・その拡張を含む作品の読込・ビデオ入ブロックでカメラを要求する場合があります。マイク認識は開始ブロック、Bluetoothは拡張本来の接続操作で要求します。Bluetoothは対応ブラウザーとファームウェアが必要です。授業前診断はAPI等の基本確認で、実機やサービス到達性の保証ではありません。学校管理ポリシーで禁止された機能は利用できません。
 
 [通信依存](docs/NETWORK_DEPENDENCIES.md)と[Chromebook検証表](docs/CHROMEBOOK_TEST.md)を確認してください。
 

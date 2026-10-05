@@ -1,3 +1,4 @@
+import {saveNative} from '../tests/browser-native-ui.mjs';
 import {chromium} from './qa/node_modules/playwright/index.mjs';
 import assert from 'node:assert/strict';
 import {writeFile} from 'node:fs/promises';
@@ -13,7 +14,7 @@ try{
  assert.equal(await page.locator('#mode').inputValue(),'student');
  const before=await graph();await page.locator('#demo').click();
  assert.equal(await graph(),before,'Sample/validation changed VM');assert.equal(await page.locator('#preview').isVisible(),true);assert.equal(await page.locator('#apply').isEnabled(),true);
- const downloadPromise=page.waitForEvent('download');await page.locator('#save').click();await downloadPromise;assert.equal(await graph(),before,'Save applied draft');
+ const downloadPromise=page.waitForEvent('download');await saveNative(page);await downloadPromise;assert.equal(await graph(),before,'Save applied draft');
  await page.locator('#apply').click();await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('反映しました'));assert.notEqual(await graph(),before);assert.match(await page.locator('#status').textContent(),/反映しました/);
  await page.locator('#undo').click();assert.equal(await graph(),before,'Undo did not restore previous graph');
  await type('fetch("https://should-never-run.invalid/");');assert.equal(await graph(),before,'Paste changed VM');assert.equal(await page.locator('#apply').isDisabled(),true);
