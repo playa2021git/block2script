@@ -17,7 +17,7 @@ function normalizeProject(project){
  return result;
 }
 async function ready(){await page.goto(appURL);await page.waitForFunction(()=>document.querySelector('#scratch-frame')?.contentWindow?.scratchNative?.vm?.editingTarget,{timeout:90000});await page.waitForFunction(()=>document.querySelector('#target').textContent.includes('スプライト'));}
-async function records(){return page.evaluate(async()=>{const db=await new Promise((resolve,reject)=>{const req=indexedDB.open('block2script-recovery',1);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});try{return await new Promise((resolve,reject)=>{const req=db.transaction('snapshots','readonly').objectStore('snapshots').getAll();req.onsuccess=()=>resolve(req.result.map(s=>({id:s.id,reason:s.reason,entries:s.entries})));req.onerror=()=>reject(req.error);});}finally{db.close();}});}
+
 try{
  await ready();
  await page.evaluate(()=>new Promise((resolve,reject)=>{const req=indexedDB.deleteDatabase('block2script-recovery');req.onsuccess=()=>resolve();req.onerror=()=>reject(req.error);req.onblocked=()=>reject(new Error('blocked'));}));
@@ -25,8 +25,8 @@ try{
  await page.locator('#demo').click();await page.locator('#apply').click();await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('反映しました'));
  const original=await page.evaluate(()=>JSON.parse(document.querySelector('#scratch-frame').contentWindow.scratchNative.vm.toJSON()));
  const draft='let unfinished =';await page.locator('.cm-content').click();await page.keyboard.press('Control+a');await page.keyboard.insertText(draft);await page.waitForTimeout(2000);
- await page.waitForFunction(async draft=>{const db=await new Promise(resolve=>{const request=indexedDB.open('block2script-recovery',1);request.onsuccess=()=>resolve(request.result);});try{return await new Promise(resolve=>{const request=db.transaction('snapshots','readonly').objectStore('snapshots').getAll();request.onsuccess=()=>resolve(request.result.some(snapshot=>snapshot.entries.some(entry=>entry.source===draft)));});}finally{db.close();}},draft,{timeout:30000});
- const saved=(await records()).filter(s=>s.entries.some(e=>e.source===draft)).sort((a,b)=>b.id-a.id)[0];assert.ok(saved,'Unapplied draft was not autosaved');
+ const savedHandle=await page.waitForFunction(async draft=>{const db=await new Promise(resolve=>{const request=indexedDB.open('block2script-recovery',1);request.onsuccess=()=>resolve(request.result);});try{return await new Promise(resolve=>{const request=db.transaction('snapshots','readonly').objectStore('snapshots').getAll();request.onsuccess=()=>resolve(request.result.filter(snapshot=>snapshot.entries.some(entry=>entry.source===draft)).sort((a,b)=>b.id-a.id)[0]||false);});}finally{db.close();}},draft,{timeout:30000});
+ const saved=await savedHandle.jsonValue();assert.ok(saved,'Unapplied draft was not autosaved');
  await context.close();context=await chromium.launchPersistentContext(profile,options);await mockCamera(context);page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await ready();
  await page.locator('#recover').click();const row=page.locator('[data-snapshot-id="'+saved.id+'"]');await row.locator('button').click();await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('作品と未反映コードを復旧しました'),{timeout:90000});
  assert.equal(await page.locator('.cm-content').innerText(),draft);assert.equal(await page.locator('#apply').isDisabled(),true);assert.equal(await page.locator('#mode').inputValue(),'student');
