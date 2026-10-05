@@ -34,5 +34,6 @@ export async function loadNative(page,path){
 export async function addNative(page,name){
  const frame=page.frameLocator('#scratch-frame');
  await frame.locator('[class*="gui_extension-button_"]').click();
- await frame.getByText(name==='Camera Selector'?/^(Camera Selector|カメラセレクター)$/:name,{exact:true}).click();
+ const label=name==='Camera Selector'?/^(Camera Selector|カメラセレクター)$/:name==='ペン'?/^(Pen|ペン)$/:name;
+ await frame.getByText(label,{exact:true}).click();
 }

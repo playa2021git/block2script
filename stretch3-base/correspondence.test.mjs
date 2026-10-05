@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {writeFile} from 'node:fs/promises';
 import {saveNative,loadNative,addNative} from '../tests/browser-native-ui.mjs';
 const browser=await chromium.launch({executablePath:process.env.BLOCK2SCRIPT_BROWSER||(process.platform==='win32'?'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe':undefined),headless:true});
-const context=await browser.newContext({viewport:{width:1600,height:1000}});
+const context=await browser.newContext({viewport:{width:1600,height:1000},locale:process.env.BLOCK2SCRIPT_TEST_LOCALE||'en-US'});
 const page=await context.newPage(),errors=[];
 page.on('pageerror',error=>errors.push(error.message));
 const url=process.env.BLOCK2SCRIPT_TEST_URL||'http://127.0.0.1:5173/';
