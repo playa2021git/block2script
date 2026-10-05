@@ -53,3 +53,9 @@ pages-distは/block2script/配下用。Camera Selectorは取得しません。�
 既存[LICENSE](LICENSE)（AGPL-3.0）を維持。第三者には各自の条件が適用されます。[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)に出典・固定版・著作権・条件を記載。サイトの使い方から対応ソースとライセンスへアクセスできます。
 
 旧開発記録はローカル版の履歴です。公開版のCamera Selector対応を意味しません。
+
+## 商標相談・公開準備
+
+独立したB2Sブランドと非公式表示を使用。許可相談中の公開設定では特定のScratch商標キャラクターを新規選択ライブラリーから一時非表示にします。既存sb3のキャラクターは置換しません。第三者拡張の正式名称とOSS attributionは保持します。許可・公認を取得したとは扱いません。
+
+[素材棚卸し](docs/BRAND_ASSET_INVENTORY.md)、[申請準備](docs/SCRATCH_PERMISSION_READINESS_2026-10-05.md)、[通信依存](docs/NETWORK_DEPENDENCIES.md)、[スクリーンショット手順](docs/permission-assets/README.md)を参照してください。

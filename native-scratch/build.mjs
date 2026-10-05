@@ -21,7 +21,7 @@ await cp(resolve(gui,'node_modules/scratch-vm/src/extensions/cameraselector'),ou
 await writeFile(out+'/licenses/CameraSelector-SOURCE-NOTICE.txt','Camera Selector, tfabworks/xcx-cameraselector, commit 8ada859f8d6b2e978a3c1bd5cebc5f1af8ce2088. No project license file or package license declaration was found in the fixed source archive. Used in this local development build; public redistribution requires resolving upstream licensing. Upstream README and source are preserved.\n');
 }
 for(const file of ['main.js','bridge.js','correspondence.js','style.css','config.js','safety.js','filenames.js','recovery.js','lesson-tools.js','extension-registry.js','extension-policies.json','build.mjs'])await cp(resolve('native-scratch',file),resolve(out+'/source',file));
-for(const file of ['prepare.mjs','prepare-robot.mjs','build.mjs','webpack-editor.cjs','manifest.json','extensions-manifest.json','NOTICE.md'])await cp(resolve('stretch3-base',file),resolve(out+'/source','stretch3-'+file));
+for(const file of ['prepare.mjs','prepare-robot.mjs','prepare-brand.mjs','build.mjs','webpack-editor.cjs','manifest.json','extensions-manifest.json','NOTICE.md'])await cp(resolve('stretch3-base',file),resolve(out+'/source','stretch3-'+file));
 await writeFile(out+'/source/NOTICE.txt','Block2Script uses a locally built Stretch3 editor. See ../licenses/NOTICE.md. This source folder is a reference subset; full corresponding runnable sources and dependency licenses must accompany any public release. The complete development workspace contains the fixed upstream sources, package-lock files, tests and build configuration.\n');
 console.log('Stretch3 editor, Script panel and license records included.');
 

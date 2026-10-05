@@ -9,7 +9,7 @@ if(process.env.BLOCK2SCRIPT_PUBLIC_BUILD==='1'){
  config.output.path=path.resolve('../../.public-build/editor');
  config.output.publicPath=(process.env.BLOCK2SCRIPT_BASE||'/block2script/')+'stretch3-dist/';
  config.entry={'lib.min':['react','react-dom'],gui:'./src/playground/index.jsx'};
- config.module.rules.unshift({test:/(?:extension-manager\.js|libraries[\\/]extensions[\\/]index\.jsx)$/,enforce:'pre',loader:path.resolve('../../scripts/public-filter-loader.cjs')});
+ config.module.rules.unshift({test:/(?:extension-manager\.js|libraries[\\/]extensions[\\/]index\.jsx|libraries[\\/](?:sprites|costumes)\.json)$/,enforce:'pre',loader:path.resolve('../../scripts/public-filter-loader.cjs')});
 }
 
 webpack(config,(error,stats)=>{

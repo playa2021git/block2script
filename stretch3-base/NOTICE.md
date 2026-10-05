@@ -19,3 +19,11 @@ Source: champierre/tm2scratch commit d018790a8afbb2bfc793ea6b8b5ef4b4e5abbd1e (A
 ## Speech2Scratch / Camera Selector integration
 Speech2Scratch: champierre/speech2scratch commit b6d0f4ed9d349d620c0ccba74acf75e90505d09b, AGPL-3.0. Camera Selector: tfabworks/xcx-cameraselector commit 8ada859f8d6b2e978a3c1bd5cebc5f1af8ce2088. The Camera Selector source archive has no project license file or package license declaration; upstream README and source are retained, and its public redistribution license must be clarified before release. This build is local development.
 Patches: native VM registration and extension cards; SpeechRecognition feature detection, duplicate-start guard, error handling and abort on stop; Camera Selector source built against the native VM, rejection of unsupported camera permission queries handled and camera streams deferred until explicit start. The video gate permits subsequent enable requests after the user starts the camera. TM2Scratch now removes the upstream remote ml5 script correctly and uses the bundled fixed dependency only. Real microphone recognition and physical camera switching remain untested.
+
+## 現在の公開状態への追記（2026-10-05）
+
+以前の「ローカル開発」「公開未実施」「実機未検証」等は当時の記録。現在はGitHub Pages公開版が存在する。最新状態はREADMEと `docs/BRAND_ASSET_INVENTORY.md` を参照。Camera Selectorはライセンス未確認のため公開版から除外。通常開発版の構成と混同しない。
+
+利用者のChromebook実機報告では翻訳・カメラ・ML2Scratch学習と処理・PoseNet人数／鼻位置・TMモデルロードが成功。micro:bit More・マイク・音声認識・合成音声も成功報告あり。TMモデルロードは全推論の成功と区別する。表のUNTESTEDは個々の端末で使う再検証テンプレート／当時の記録であり、成功報告を否定するものではない。全機能・全端末・40台授業規模の検証完了ではない。
+
+ブランド整理では独自B2Sロゴと非公式表示を使用し、公開版の新規選択から特定商標キャラクターを一時非表示にする。既存sb3互換性とOSS attributionを保持する。Scratch Foundationからの許可はまだ取得していない。

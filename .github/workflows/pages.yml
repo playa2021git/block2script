@@ -31,9 +31,12 @@ jobs:
           BLOCK2SCRIPT_TEST_URL: http://127.0.0.1:5175/block2script/
         run: |
           node scripts/serve-pages.mjs &
+          node stretch3-base/brand.test.mjs
           node stretch3-base/pages-smoke.test.mjs
           node stretch3-base/correspondence.test.mjs
           node stretch3-base/chromebook-priority-a.test.mjs
+          node stretch3-base/recovery.test.mjs
+          node stretch3-base/standard-extensions.test.mjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

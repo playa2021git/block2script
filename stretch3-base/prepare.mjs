@@ -83,3 +83,4 @@ await writeFile(resolve(base,'extensions-manifest.json'),JSON.stringify(records.
 console.log('Stretch3 builtins and explicit VM/workspace connection prepared.');
 
 import './prepare-robot.mjs';
+import './prepare-brand.mjs';

@@ -45,3 +45,5 @@ stretch3-base/*.mjs
 !stretch3-base/*.test.mjs
 !stretch3-base/smoke.mjs
 stretch3-base/speech-camera-sources.json
+
+!stretch3-base/prepare-brand.mjs

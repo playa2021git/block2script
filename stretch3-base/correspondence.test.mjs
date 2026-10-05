@@ -1,6 +1,6 @@
 import {chromium} from './qa/node_modules/playwright/index.mjs';
 import assert from 'node:assert/strict';
-import {writeFile} from 'node:fs/promises';
+import {writeFile,mkdir} from 'node:fs/promises';
 import {saveNative,loadNative,addNative} from '../tests/browser-native-ui.mjs';
 const browser=await chromium.launch({executablePath:process.env.BLOCK2SCRIPT_BROWSER||(process.platform==='win32'?'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe':undefined),headless:true});
 const context=await browser.newContext({viewport:{width:1600,height:1000},locale:process.env.BLOCK2SCRIPT_TEST_LOCALE||'en-US'});
@@ -20,6 +20,7 @@ async function type(text){await page.locator('.cm-content').click();await page.k
 async function selected(){return page.evaluate(()=>[...document.querySelector('#scratch-frame').contentDocument.querySelectorAll('.b2s-block-correspondence')].map(root=>root.getAttribute('data-id')));}
 async function selectBlock(id){await page.evaluate(id=>document.querySelector('#scratch-frame').contentWindow.scratchNative.getController().workspace.getBlockById(id).select(),id);}
 try{
+ await mkdir('docs/permission-assets',{recursive:true});
  await ready(page);
  assert.equal(await page.locator('header #stretch,header #load,header #save').count(),0);
  await type(source);await page.locator('#validate').click();assert.equal(await page.locator('#apply').isEnabled(),true);
@@ -27,8 +28,10 @@ try{
  await selectBlock('say-b');await page.waitForSelector('.b2s-code-correspondence');
  assert.match(await page.locator('.b2s-code-correspondence').innerText(),/"B"/);
  assert.deepEqual(await selected(),['say-b']);
+ await page.screenshot({path:'docs/permission-assets/02-block-to-script.png'});
  await page.locator('.cm-line').filter({hasText:'"MESSAGE": "A"'}).click({position:{x:55,y:8}});
  assert.deepEqual(await selected(),['say-a']);
+ await page.screenshot({path:'docs/permission-assets/03-script-to-block.png'});
  await selectBlock('equals');await page.waitForSelector('.b2s-code-correspondence');
  assert.match(await page.locator('.b2s-code-correspondence').innerText(),/^scratch\.operator_equals/);
  assert.deepEqual(await selected(),['equals']);

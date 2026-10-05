@@ -1,0 +1,46 @@
+import {chromium} from './qa/node_modules/playwright/index.mjs';
+import assert from 'node:assert/strict';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
+import {saveNative,loadNative,mockCamera} from '../tests/browser-native-ui.mjs';
+const browser=await chromium.launch({executablePath:process.env.BLOCK2SCRIPT_BROWSER||(process.platform==='win32'?'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe':undefined),headless:true});
+const context=await browser.newContext({viewport:{width:1600,height:1000},locale:'en-US'});
+await mockCamera(context);
+const page=await context.newPage(),errors=[];
+page.on('pageerror',e=>{errors.push(e.message);console.error(e.stack);});
+const url=process.env.BLOCK2SCRIPT_TEST_URL||'http://127.0.0.1:5175/block2script/';
+await mkdir('docs/permission-assets',{recursive:true});
+try{
+ await page.goto(url);
+ await page.waitForFunction(()=>document.querySelector('#target')?.textContent.includes('Block2Bot'),null,{timeout:120000});
+ assert.match(await page.title(),/^Block2Script/);
+ assert.equal(await page.locator('header .brand').innerText(),'Block2Script');
+ assert.ok(await page.locator('#independent').isVisible());
+ const frame=page.frameLocator('#scratch-frame');
+ const logo=frame.locator('#logo_img');
+ assert.equal(await logo.getAttribute('alt'),'Block2Script');
+ assert.match(await logo.getAttribute('src'),/B2S/);
+ const head=await page.evaluate(()=>{const d=document.querySelector('#scratch-frame').contentDocument;return {title:d.title,icon:d.querySelector('link[rel="shortcut icon"]').href,parentIcon:document.querySelector('link[rel="icon"]').href,manifest:document.querySelector('link[rel="manifest"]')?.href};});
+ assert.equal(head.title,'Block2Script');assert.match(head.icon,/B2S/);assert.ok(head.parentIcon.startsWith('data:image/svg+xml,'));assert.equal(head.manifest,undefined);
+ await page.locator('#independent').click();assert.match(await page.locator('#help-dialog').innerText(),/not affiliated with or endorsed by/);await page.locator('#close-help').click();
+ await page.screenshot({path:'docs/permission-assets/01-overview.png'});
+ await frame.locator('[aria-label="Choose a Sprite"]').first().click();
+ await frame.getByRole('dialog',{name:'Choose a Sprite'}).waitFor();
+ assert.ok(await frame.locator('[class*="library-item_library-item-name_"]').count()>100,'Library names selector must match real items');
+ const policy=JSON.parse(await readFile('scripts/brand-library-policy.json','utf8'));
+ for(const name of policy.sprites)assert.equal(await frame.locator('[class*="library-item_library-item-name_"]').filter({hasText:new RegExp('^'+name+'$')}).count(),0,name+' remains selectable');
+ assert.ok(await frame.getByText('Catcher',{exact:true}).count(),'Unrelated sprite removed');
+ await page.waitForFunction(()=>[...document.querySelector('#scratch-frame').contentDocument.querySelectorAll('[class*="library-item_library-item-image_"]')].slice(0,6).every(i=>i.complete&&i.naturalWidth>0),null,{timeout:20000}).catch(()=>console.log('Library thumbnails unavailable on this test network'));
+ await page.screenshot({path:'docs/permission-assets/04-sprite-library.png'});
+ await frame.getByRole('dialog',{name:'Choose a Sprite'}).getByText('Back',{exact:true}).click();
+ // Original fixture contains Scratch Cat: loading and saving must preserve its assets.
+ console.log('Library checks passed; loading legacy fixture');
+ await loadNative(page,'tests/fixtures/stretch-three.sb3');
+ console.log('Legacy fixture loaded');
+ const snapshot=()=>page.evaluate(()=>document.querySelector('#scratch-frame').contentWindow.scratchNative.vm.runtime.targets.filter(t=>t.isOriginal&&!t.isStage).map(t=>({name:t.getName(),costumes:t.getCostumes().map(c=>({assetId:c.assetId,name:c.name,dataFormat:c.dataFormat}))})));
+ const before=await snapshot();assert.ok(before.some(t=>t.costumes.some(c=>c.name==='costume1'||c.name==='cat-a')),'Fixture must contain cat');
+ const download=page.waitForEvent('download');await saveNative(page);await(await download).saveAs('stretch3-base/qa/brand-compatibility.sb3');
+ await loadNative(page,'stretch3-base/qa/brand-compatibility.sb3');assert.deepEqual(await snapshot(),before);
+ const b2s=page.waitForEvent('download');await page.locator('#save-code').click();const code=await b2s;assert.match(code.suggestedFilename(),/\.b2s$/);await code.saveAs('stretch3-base/qa/brand-code.b2s');
+ assert.deepEqual(errors,[]);await writeFile('stretch3-base/qa/brand-result.json',JSON.stringify({pass:true,checks:['independent branding and disclaimer','titles and favicons','public library exclusion','unrelated sprite retained','existing cat sb3 save/reload','b2s download'],errors},null,2));
+ console.log('Public branding and compatibility checks passed.');
+}finally{await browser.close();}

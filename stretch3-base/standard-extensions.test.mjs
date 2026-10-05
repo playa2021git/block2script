@@ -8,7 +8,7 @@ const browser=await chromium.launch({executablePath:process.env.BLOCK2SCRIPT_BRO
 const context=await browser.newContext({viewport:{width:1550,height:1000}}),errors=[];
 context.on('page',p=>p.on('pageerror',e=>errors.push(e.message)));
 // Keep the test independent of the translation service language-list endpoint.
-await context.route('**/translate-service.scratch.mit.edu/**',route=>route.fulfill({json:{result:[],languages:[]}}));
+await context.route('**/scratch-translate-proxy.junya-119.workers.dev/**',route=>route.fulfill({json:{result:[],languages:[]}}));
 async function ready(p){await p.goto(url);await p.waitForFunction(()=>document.querySelector('#scratch-frame')?.contentWindow?.scratchNative?.vm?.editingTarget,{timeout:90000});await p.waitForFunction(()=>document.querySelector('#target').textContent.includes('スプライト'));}
 async function graph(p){return p.evaluate(()=>JSON.stringify(document.querySelector('#scratch-frame').contentWindow.scratchNative.vm.editingTarget.blocks._blocks));}
 async function type(p,s){await p.locator('.cm-content').click();await p.keyboard.press('Control+a');await p.keyboard.insertText(s);}

@@ -20,3 +20,11 @@ Camera Selectorは固定版のライセンスを確認できず公開版から�
 初回ActionsはStretch3取得時のhash不一致で停止。記録済みhashに1文字多い誤記があり、全7アーカイブのGitHub取得版とローカル元版を展開・ファイル内容比較して同一を確認。実アーカイブのSHA-256へ訂正。ソースの版・内容は変更していない。
 
 2回目ActionsではLinuxの本体ビルドが成功後、Windows起点のroot lockfileにLinux用optional bindingがないため配布ビルドが停止。同じ固定版のrolldown 1.2.12 / lightningcss 1.33.0用Linux x64 GNU bindingをnpm公式メタデータのintegrity付きで補完。既存依存の版は変更していない。
+
+## 現在の公開状態への追記（2026-10-05）
+
+以前の「ローカル開発」「公開未実施」「実機未検証」等は当時の記録。現在はGitHub Pages公開版が存在する。最新状態はREADMEと `docs/BRAND_ASSET_INVENTORY.md` を参照。Camera Selectorはライセンス未確認のため公開版から除外。通常開発版の構成と混同しない。
+
+利用者のChromebook実機報告では翻訳・カメラ・ML2Scratch学習と処理・PoseNet人数／鼻位置・TMモデルロードが成功。micro:bit More・マイク・音声認識・合成音声も成功報告あり。TMモデルロードは全推論の成功と区別する。表のUNTESTEDは個々の端末で使う再検証テンプレート／当時の記録であり、成功報告を否定するものではない。全機能・全端末・40台授業規模の検証完了ではない。
+
+ブランド整理では独自B2Sロゴと非公式表示を使用し、公開版の新規選択から特定商標キャラクターを一時非表示にする。既存sb3互換性とOSS attributionを保持する。Scratch Foundationからの許可はまだ取得していない。
