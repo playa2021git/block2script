@@ -55,11 +55,13 @@ function schema(opcode,meta){
  try{
  b=temp.newBlock(opcode);
  if(meta?.mutation&&b.domToMutation){const dom=document.createElement('mutation');for(const [k,v]of Object.entries(meta.mutation))if(k!=='children'&&k!=='tagName')dom.setAttribute(k,String(v));b.domToMutation(dom);}
- const def={fields:{},menus:{},inputs:{},output:!!b.outputConnection,previous:!!b.previousConnection,next:!!b.nextConnection};
- for(const input of b.inputList){for(const f of input.fieldRow??[])if(f.name){if(f.getOptions&&!f.getVariable){try{def.menus[f.name]=f.getOptions(false).map(option=>String(option[1]));}catch{}}const variable=f.getVariable?.();def.fields[f.name]={name:f.name,value:variable?.name??f.getValue(),...(variable?{id:variable.getId(),variableType:variable.type}:{})};}
+ const def={fields:{},menus:{},dynamicMenus:[],inputs:{},output:!!b.outputConnection,previous:!!b.previousConnection,next:!!b.nextConnection};
+ for(const input of b.inputList){for(const f of input.fieldRow??[])if(f.name){if(f.getOptions&&!f.getVariable){if(typeof f.menuGenerator_==='function')def.dynamicMenus.push(f.name);try{def.menus[f.name]=f.getOptions(false).map(option=>String(option[1]));}catch{}}const variable=f.getVariable?.();def.fields[f.name]={name:f.name,value:variable?.name??f.getValue(),...(variable?{id:variable.getId(),variableType:variable.type}:{})};}
  if(input.name&&input.connection)def.inputs[input.name]={statement:input.connection.type===3,checks:input.connection.getCheck?.()??null};}
  try{const toolbox=new DOMParser().parseFromString(controller.getToolboxXML(),'text/xml');const el=[...toolbox.querySelectorAll('block,shadow')].find(e=>e.getAttribute('type')===opcode);if(el){const t=xmlTemplate(el);for(const [name,data]of Object.entries(t.inputs))if(def.inputs[name]&&data.shadow)def.inputs[name].shadow=data.shadow;}}catch{}
- schemaCache.set(key,def);return def;
+ // Function-backed menu options depend on model metadata, devices or runtime state.
+ // Rebuild function-backed menus; retain caching for static schemas.
+ if(!def.dynamicMenus.length)schemaCache.set(key,def);return def;
  }catch(error){console.warn('Scratch schema:',opcode,error);return null;}finally{try{for(const created of temp.getAllBlocks(false))if(!priorIds.has(created.id)&&!created.isDisposed?.())created.dispose(false);for(const variable of temp.getVariableMap().getAllVariables())if(!priorVariables.has(variable.getId()))temp.getVariableMap().deleteVariable(variable);}catch(error){console.warn('Scratch schema disposal:',opcode,error);}SB.Events.enable();}
 }
 function updateCatalog(){
@@ -81,7 +83,14 @@ function normalizeReferences(graph,target){
 function validateConnections(graph){
  for(const b of Object.values(graph.blocks)){
  const def=schema(b.opcode,{mutation:b.mutation});if(!def)throw new Error(`ブロック「${b.opcode}」の定義を確認できません`);
- for(const [name,options] of Object.entries(def.menus??{}))if(options.length&&b.fields[name]&&!options.includes(String(b.fields[name].value))){const error=new Error('不正なメニュー値: '+name);error.code='INVALID_MENU';throw error;}
+ for(const [name,options] of Object.entries(def.menus??{})){
+  if(!b.fields[name])continue;
+  const value=String(b.fields[name].value),original=base[b.id];
+  // Preserve an unchanged saved dynamic label while external metadata is unavailable.
+  // New/edited values still have to belong to the current menu; static menus stay strict.
+  const preserved=def.dynamicMenus?.includes(name)&&original?.opcode===b.opcode&&String(original.fields[name]?.value)===value;
+  if(options.length&&!options.includes(value)&&!preserved){const error=new Error('不正なメニュー値: '+name);error.code='INVALID_MENU';throw error;}
+ }
  if(b.next&&!def.next)throw new Error(`「${b.opcode}」の下には命令をつなげられません`);
  for(const [name,i] of Object.entries(b.inputs)){const child=graph.blocks[i.block];if(!child)continue;const childDef=schema(child.opcode,{mutation:child.mutation});if(def.inputs[name]?.statement){if(!childDef?.previous)throw new Error(`「${name}」には命令ブロックを指定してください`);}else if(!childDef?.output)throw new Error(`「${name}」には数値・文字列・レポーターを指定してください`);}
  }
