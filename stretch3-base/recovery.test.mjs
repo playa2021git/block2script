@@ -7,13 +7,23 @@ const profile=resolve('stretch3-base/qa/recovery-profile');
 const options={executablePath:process.env.BLOCK2SCRIPT_BROWSER||(process.platform==='win32'?'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe':undefined),headless:true,viewport:{width:1550,height:1000}};
 const appURL=process.env.BLOCK2SCRIPT_TEST_URL||'http://127.0.0.1:5173/';
 const moduleURL=new URL(new URL(appURL).pathname.includes('/block2script/')?'source/recovery.js':'native-scratch/recovery.js',appURL).href;
-let context=await chromium.launchPersistentContext(profile,options);await mockCamera(context);let page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+// Recovery asserts project persistence, not ML inference. Keep optional public
+// model downloads pending so network failures or CPU inference cannot affect it.
+async function deferModels(context){await context.route(/^https:\/\/(storage\.googleapis\.com|www\.gstatic\.com|tfhub\.dev)\//,()=>{});}
+let context=await chromium.launchPersistentContext(profile,options);await mockCamera(context);await deferModels(context);let page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
 // Scratch/Blockly normalizes numeric shadow values from numbers to strings.
 // Keep the full project comparison, canonicalizing only numeric input descriptors.
 function normalizeProject(project){
  const result=structuredClone(project);
  function input(value){if(!Array.isArray(value))return;if(value.length===2&&typeof value[0]==='number'&&value[0]>=4&&value[0]<=8&&['number','string'].includes(typeof value[1])){value[1]=String(value[1]);return;}value.forEach(input);}
- for(const target of result.targets)for(const block of Object.values(target.blocks))if(block.inputs)Object.values(block.inputs).forEach(input);
+ for(const target of result.targets)for(const block of Object.values(target.blocks)){
+  if(block.inputs)Object.values(block.inputs).forEach(input);
+  // These two PoseNet dropdowns are not variable references. Scratch may
+  // serialize their absent optional field ID as null after another reload.
+  // Normalize only that empty slot; preserve every actual variable/list ID.
+  const key=block.opcode==='posenet2scratch_menu_personNumbers'?'personNumbers':block.opcode==='posenet2scratch_menu_parts'?'parts':null;
+  const field=key&&block.fields?.[key];if(Array.isArray(field)&&field.length===2&&field[1]===null)field.pop();
+ }
  return result;
 }
 async function ready(){await page.goto(appURL);await page.waitForFunction(()=>document.querySelector('#scratch-frame')?.contentWindow?.scratchNative?.vm?.editingTarget,{timeout:90000});await page.waitForFunction(()=>document.querySelector('#target').textContent.includes('スプライト'));}
@@ -36,7 +46,7 @@ try{
   if(!saved)await page.waitForTimeout(250);
  }
  assert.ok(saved,'Unapplied draft was not autosaved');
- await context.close();context=await chromium.launchPersistentContext(profile,options);await mockCamera(context);page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await ready();
+ await context.close();context=await chromium.launchPersistentContext(profile,options);await mockCamera(context);await deferModels(context);page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await ready();
  await page.locator('#recover').click();const row=page.locator('[data-snapshot-id="'+saved.id+'"]');await row.locator('button').click();await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('作品と未反映コードを復旧しました'),{timeout:90000});
  assert.equal(await page.locator('.cm-content').innerText(),draft);assert.equal(await page.locator('#apply').isDisabled(),true);assert.equal(await page.locator('#mode').inputValue(),'student');
  const restored=await page.evaluate(()=>JSON.parse(document.querySelector('#scratch-frame').contentWindow.scratchNative.vm.toJSON()));assert.deepEqual(normalizeProject(restored),normalizeProject(original),'Project changed on recovery');
@@ -50,11 +60,15 @@ try{
  assert.deepEqual(normalizeProject(await page.evaluate(()=>JSON.parse(document.querySelector('#scratch-frame').contentWindow.scratchNative.vm.toJSON()))),normalizeProject(original),'Broken snapshot destroyed project');
  assert.equal(await page.locator('.cm-content').innerText(),draft,'Failed recovery lost draft');await page.locator('#close-recovery').click();
  const valid='scratch.script({}, () => { scratch.event_whenflagclicked({}); scratch.motion_movesteps({STEPS: 20}); });';
- await page.locator('.cm-content').click();await page.keyboard.press('Control+a');await page.keyboard.insertText(valid);await page.locator('#validate').click();
+ await page.locator('.cm-content').click();await page.keyboard.press('Control+a');await page.keyboard.insertText(valid);
+ // Workspace reloads emit asynchronous field events. A changed preview must
+ // remain invalid, so validate the quota probe only after those events settle.
+ await page.waitForTimeout(500);await page.locator('#validate').click();
+ assert.equal(await page.locator('#apply').isEnabled(),true,await page.locator('#status').textContent());
  await page.evaluate(()=>{window.originalIDBTransaction=IDBDatabase.prototype.transaction;IDBDatabase.prototype.transaction=function(name,mode,...args){if(name==='snapshots'&&mode==='readwrite')throw new DOMException('full','QuotaExceededError');return window.originalIDBTransaction.call(this,name,mode,...args);};});
  try{await page.locator('#apply').click();await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('ブラウザーに保存できません'));assert.deepEqual(normalizeProject(await page.evaluate(()=>JSON.parse(document.querySelector('#scratch-frame').contentWindow.scratchNative.vm.toJSON()))),normalizeProject(original),'Failed backup allowed mutation');}
  finally{await page.evaluate(()=>{IDBDatabase.prototype.transaction=window.originalIDBTransaction;});}
  await page.screenshot({path:'stretch3-base/qa/recovery.png'});assert.deepEqual(errors,[]);
- await writeFile('stretch3-base/qa/recovery-result.json',JSON.stringify({pass:true,checks:['dated filenames separately verified','draft autosave','disk persistence after browser restart','full project JSON identical','three extensions restored','draft remains unapplied','ten generations retained','corrupt snapshot rolls back project and draft','failed checkpoint blocks mutation'],retention,errors},null,2));console.log('Recovery verified after browser restart: full project and draft preserved; 10 generations; errors 0.');
+ await writeFile('stretch3-base/qa/recovery-result.json',JSON.stringify({pass:true,checks:['dated filenames separately verified','draft autosave','disk persistence after browser restart','full project JSON identical','three extensions restored','draft remains unapplied','ten generations retained','corrupt snapshot rolls back project and draft','failed checkpoint blocks mutation'],retention,inference:'NOT_RUN: model downloads deferred; synthetic camera',errors},null,2));console.log('Recovery verified after browser restart: full project and draft preserved; 10 generations; errors 0.');
 }finally{await context.close();}
 
