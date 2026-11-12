@@ -1,4 +1,5 @@
 import {parse} from 'acorn';
+import {referenceType} from './references.js';
 const clone=v=>structuredClone(v);
 const own=(o,k)=>Object.hasOwn(o,k);
 const primitive={math_number:'NUM',math_integer:'NUM',math_whole_number:'NUM',math_positive_number:'NUM',math_angle:'NUM',text:'TEXT',colour_picker:'COLOUR'};
@@ -34,8 +35,11 @@ export function exportCodeWithMap(blocks,scripts,targetId=null){
    args.push(joinFragments([fragment(`${JSON.stringify(key)}: `),code]));
   }
   for(const [key,field] of Object.entries(b.fields??{}))args.push(fragment(`${JSON.stringify(key)}: ${literalCode(field.value)}`));
-  const meta=cleanMeta(b);delete meta.id;meta.id=b.id;
+  const meta=cleanMeta(b);delete meta.id;delete meta.references;meta.id=b.id;
+  const references={};for(const [key,field] of Object.entries(b.fields??{})){const type=referenceType(b.opcode,key);if(type!==null&&field.id)references[key]={id:field.id,name:String(field.value),type};}
+  if(Object.keys(references).length)meta.references=references;
   if(b.shadow)meta.shadow=true;
+  if(!own(b,'topLevel'))meta.topLevelAbsent=true;
   // Keep shadow definitions in the source too, so pasted code remains self-contained.
   const shadows={};for(const [key,input] of Object.entries(b.inputs??{}))if(input.shadow&&blocks[input.shadow]){
    const ids=new Set();const collect=id=>{if(!id||ids.has(id)||!blocks[id])return;ids.add(id);for(const i of Object.values(blocks[id].inputs??{})){collect(i.block);collect(i.shadow);}collect(blocks[id].next);};collect(input.shadow);
@@ -86,8 +90,15 @@ export function compileCode(code,{base={},schema=()=>null,uid=()=>crypto.randomU
   if(!old&&!def)fail(n,`「${opcode}」はScratchに登録されていません。拡張機能を先に読み込んでください`);
   if(old&&old.opcode!==opcode)fail(n,'ブロックの種類を変える場合は第2引数の id を削除してください');
   const b=old?clone(old):{id,opcode,inputs:{},fields:{},next:null,parent:null,shadow:false,topLevel:false};
-  const {shadows,...rest}=meta;Object.assign(b,rest,{id,opcode,next:null,parent,topLevel,inputs:{},fields:clone(old?.fields??def?.fields??{})});
+  const {shadows,references,topLevelAbsent,...rest}=meta;
+  if(references!==undefined){
+   if(!references||Array.isArray(references)||typeof references!=='object')fail(n,'変数・リストの参照情報を確認してください');
+   for(const [key,ref] of Object.entries(references))if(referenceType(opcode,key)===null||!ref||typeof ref.id!=='string'||!ref.id||typeof ref.name!=='string'||ref.type!==referenceType(opcode,key))fail(n,'変数・リストの参照情報を確認してください');
+  }
+  Object.assign(b,rest,{id,opcode,next:null,parent,topLevel,inputs:{},fields:clone(old?.fields??def?.fields??{})});
   delete b.x;delete b.y;
+  // VM's compact sb3 variable/list reporters may omit this optional flag.
+  if(!topLevel&&(topLevelAbsent===true||old&&!own(old,'topLevel')))delete b.topLevel;
   if(meta.mutation)b.mutation=clone(meta.mutation);
   const fields=new Set([...Object.keys(old?.fields??{}),...Object.keys(def?.fields??{})]);
   const inputs=new Set(Object.keys(old?.inputs??def?.inputs??{}));
@@ -117,6 +128,11 @@ export function compileCode(code,{base={},schema=()=>null,uid=()=>crypto.randomU
     }
    }
    b.inputs[key]={name:key,block:child,shadow:shadow??null};
+  }
+  for(const [key,field] of Object.entries(b.fields)){if(referenceType(opcode,key)===null)continue;
+   // Workspace defaults do not express an author's choice of local/global scope.
+   if(!old||old.fields?.[key]?.value!==field.value)delete field.id;
+   if(references?.[key]?.name===field.value)field.id=references[key].id;
   }
   for(const key of inputs)if(!own(b.inputs,key)){
    if(key.startsWith('SUBSTACK'))b.inputs[key]={name:key,block:null,shadow:null};

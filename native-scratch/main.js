@@ -4,7 +4,8 @@ import {buildSpecification,diagnoseEnvironment} from './lesson-tools.js';
 import {APP_NAME,DSL_NAME,EDITOR_BASE} from './config.js';
 document.title = `${APP_NAME} | Blocks ⇄ Script`; 
 import {exportCode,exportCodeWithMap,compileCode,applyGraph} from './bridge.js';
-import {commitGraph,assertPreview,studentError} from './safety.js';
+import {commitGraph,undoGraph,assertPreview,studentError} from './safety.js';
+import {planReferences,withWorkspaceReferenceIds} from './references.js';
 import {datedFilename} from './filenames.js';
 import {RecoveryStore,captureDrafts,mapDrafts} from './recovery.js';
 import {EditorView,keymap} from '@codemirror/view';
@@ -15,13 +16,17 @@ import {correspondenceField,connectCorrespondence} from './correspondence.js';
 import {HighlightStyle,syntaxHighlighting,foldEffect,unfoldAll} from '@codemirror/language';
 import {tags} from '@lezer/highlight';
 const $=s=>document.querySelector(s);
-$('#app').innerHTML=`<header><span class="brand">${APP_NAME}</span><button id="independent" title="Block2ScriptはオープンソースのScratchエディターを基にした独立した教育用プロジェクトです。Scratch Foundationの公式製品・公認製品ではありません。">非公式 / Independent</button><span class="native">${EDITOR_BASE}基盤 · Blocks ⇄ Script</span><div class="actions"><button id="undo">コード反映を戻す</button><button id="recover">復旧</button><button id="toggle">パネルを隠す</button><button id="diagnose">授業前診断</button><button id="help">使い方</button></div></header><main><iframe id="scratch-frame" src="${import.meta.env.BASE_URL}stretch3-dist/index.html" title="${EDITOR_BASE}エディター" allow="microphone; camera; autoplay"></iframe><div id="resize" role="separator" aria-label="コードパネルの幅" aria-orientation="vertical" tabindex="0"></div><aside id="panel"><div class="panel-head"><b class="js">Script</b><b>${DSL_NAME}</b><button id="validate">検証</button><button id="apply" disabled>Scratchへ反映</button></div><div id="mode-controls"><label>使い方 <select id="mode"><option value="student">生徒モード</option><option value="teacher">先生・開発モード</option></select></label><label><input id="auto-sync" type="checkbox" disabled>自動反映</label></div><div id="target">Scratchを読み込み中…</div><div id="editor"></div><div id="preview" hidden></div><div id="status" role="status">本物のScratchエディターを起動しています</div><div id="backup-status" role="status">自動保存を準備しています</div><div class="panel-foot">Scratchで編集 ⇄ コードで編集<br><span id="mode-help">貼り付け → 検証 → 反映。実行は緑の旗。</span><br><button id="demo">連動サンプルを追加</button> <button id="verify">往復を検証</button> <button id="metadata">メタ情報を表示</button> <button id="save-code">コードを保存</button><button id="copy-repair" hidden>AIへの修正依頼をコピー</button></div><details id="save-scope"><summary>保存されるデータ</summary><p>.sb3：反映済みのブロック、スプライト、衣装、音、変数・リスト、拡張のブロックと設定を保存します。</p><p>.b2s：「コードを保存」で現在のスプライトのScriptを保存します。未反映コードは.sb3には入りません。</p><p>自動保存：作品全体と未反映コードを、このブラウザー・このアドレスに直近10世代保存します。「復旧」で戻せます。</p><p>別途保存：ML2Scratchの学習データ、TM2Scratchなどの外部モデル本体、実機の状態。外部モデルURLはブロックに保存されます。音声合成・翻訳は実行時に外部サービスへの通信が必要です。</p></details><details id="api"><summary>AI用の命令一覧・仕様</summary><button id="copy-guide">AI用仕様をコピー</button><button id="save-spec">仕様JSONを保存</button><pre id="api-list"></pre></details></aside></main><dialog id="help-dialog"><button class="close" id="close-help">閉じる</button><h2>${EDITOR_BASE}のブロックとScriptをつなぐ</h2>${import.meta.env.VITE_PUBLIC_BUILD?'<p>Development / Chromebook Test · v1.0.0 <a href="source/index.html" target="_blank" rel="noopener">対応ソース</a> · <a href="licenses/THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener">第三者ライセンス</a></p>':''}<p>${DSL_NAME}は、JavaScript風の記法でブロックを表現する${APP_NAME}専用のテキスト記法です。</p><p>${APP_NAME}はScratch EditorとStretch3のオープンソース実装を基盤とする非公式プロジェクトです。各名称・商標は各権利者に帰属します。Block2ScriptはオープンソースのScratchエディターを基にした独立した教育用プロジェクトです。Scratch Foundationの公式製品・公認製品ではありません。</p><p>Block2Script is an independent educational project based on the open-source Scratch editor. It is not an official Scratch product and is not affiliated with or endorsed by the Scratch Foundation.</p><p>左は${EDITOR_BASE}のエディター・VM・ブロック・ペイントを読み込んだものです。衣装や音、複数スプライト、独自ブロック、Scratchの拡張機能もScratch自身が管理・実行します。</p><p>作品の読込・保存は左の「ファイル」メニュー、拡張追加は左下の拡張ボタンを使います。ブロックを選ぶと対応コードが青く光り、コードをクリックすると対応ブロックが光ります。未反映コードの編集中は誤対応を避けるためハイライトを解除します。</p><p>右のコードは、現在選択しているスプライトのブロックを表します。Scratchのブロックを変更するとコードが更新され、生徒モードでは「検証」で対象と変更内容を確認した後、「Scratchへ反映」を押します。先生・開発モードでは自動反映を選べます。</p><pre>scratch.script({x: 40, y: 40}, () => {\n  scratch.event_whenflagclicked({});\n  scratch.motion_movesteps({STEPS: 50});\n  scratch.control_repeat({TIMES: 10,\n    SUBSTACK: () => {\n      scratch.motion_turnright({DEGREES: 15});\n      scratch.control_wait({DURATION: 0.1});\n    }\n  });\n});</pre><p>命令名・入力名はScratch本体の定義を使います。<code>scratch.operator_add({NUM1: 10, NUM2: 20})</code> のようにレポーターを入力に入れられます。拡張機能のブロックも、読み込まれた定義を命令一覧へ追加します。</p><p>「AI用仕様をコピー」の内容をAIへ渡し、生成されたコードを右に貼り付け、「検証」で確認してから「Scratchへ反映」を押します。AIの自動呼び出しはまだ接続していません。既存の <code>/*@scratch ...*/</code> コメントはブロックIDやシャドー・独自ブロックの情報です。普段は折りたたんでいます。</p><p>入力途中や未対応のJavaScript構文では最後のブロックを残します。コードが不正な間はScratch側からコードを上書きしません。スプライトを切り替えても編集中のコードをスプライト別に保持します。コードを反映すると実行中のスクリプトは停止します。</p><p class="warning">Scratch全機能の双方向編集を目指す開発版です。任意のJavaScriptの関数・ライブラリ・文法をScratchへ変換するものではありません。ブロック定義に対応する呼び出し形式を使います。ハードウェア拡張や一部特殊な独自ブロックは別途実機検証が必要です。公式Scratchサイトのログイン・共有・クラウド変数サービスは接続していません。</p><details id="extension-information"><summary>拡張の保存範囲・通信・機器</summary><div id="extension-information-list"></div></details></dialog>`;
+$('#app').innerHTML=`<header><span class="brand">${APP_NAME}</span><button id="independent" title="Block2ScriptはオープンソースのScratchエディターを基にした独立した教育用プロジェクトです。Scratch Foundationの公式製品・公認製品ではありません。">非公式 / Independent</button><span class="native">${EDITOR_BASE}基盤 · Blocks ⇄ Script</span><div class="actions"><button id="undo">コード反映を戻す</button><button id="recover">復旧</button><button id="toggle">パネルを隠す</button><button id="diagnose">授業前診断</button><button id="help">使い方</button></div></header><main><iframe id="scratch-frame" src="${import.meta.env.BASE_URL}stretch3-dist/index.html" title="${EDITOR_BASE}エディター" allow="microphone; camera; autoplay"></iframe><div id="resize" role="separator" aria-label="コードパネルの幅" aria-orientation="vertical" tabindex="0"></div><aside id="panel"><div class="panel-head"><b class="js">Script</b><b>${DSL_NAME}</b><button id="validate">検証</button><button id="apply" disabled>Scratchへ反映</button></div><div id="mode-controls"><label>使い方 <select id="mode"><option value="student">生徒モード</option><option value="teacher">先生・開発モード</option></select></label><label><input id="auto-sync" type="checkbox" disabled>自動反映</label></div><div id="target">Scratchを読み込み中…</div><div id="editor"></div><div id="preview" hidden></div><div id="status" role="status">本物のScratchエディターを起動しています</div><div id="backup-status" role="status">自動保存を準備しています</div><div class="panel-foot">Scratchで編集 ⇄ コードで編集<br><span id="mode-help">貼り付け → 検証 → 反映。実行は緑の旗。</span><br><button id="demo">連動サンプルを追加</button> <button id="verify">往復を検証</button> <button id="metadata">メタ情報を表示</button> <button id="save-code">コードを保存</button><button id="copy-repair" hidden>AIへの修正依頼をコピー</button></div><details id="save-scope"><summary>保存されるデータ</summary><p>.sb3：反映済みのブロック、スプライト、衣装、音、変数・リスト、拡張のブロックと設定を保存します。</p><p>.b2s：「コードを保存」で現在のスプライトのScriptを保存します。未反映コードは.sb3には入りません。</p><p>自動保存：作品全体と未反映コードを、このブラウザー・このアドレスに直近10世代保存します。「復旧」で戻せます。</p><p>別途保存：ML2Scratchの学習データ、TM2Scratchなどの外部モデル本体、実機の状態。外部モデルURLはブロックに保存されます。音声合成・翻訳は実行時に外部サービスへの通信が必要です。</p></details><details id="api"><summary>AI用の命令一覧・仕様</summary><button id="copy-guide">AI用仕様をコピー</button><button id="save-spec">仕様JSONを保存</button><pre id="api-list"></pre></details></aside></main><dialog id="help-dialog"><button class="close" id="close-help">閉じる</button><h2>${EDITOR_BASE}のブロックとScriptをつなぐ</h2>${import.meta.env.VITE_PUBLIC_BUILD?'<p>Development / Chromebook Test · v1.0.0 <a href="source/index.html" target="_blank" rel="noopener">対応ソース</a> · <a href="licenses/THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener">第三者ライセンス</a></p>':''}<p>${DSL_NAME}は、JavaScript風の記法でブロックを表現する${APP_NAME}専用のテキスト記法です。</p><p>${APP_NAME}はScratch EditorとStretch3のオープンソース実装を基盤とする非公式プロジェクトです。各名称・商標は各権利者に帰属します。Block2ScriptはオープンソースのScratchエディターを基にした独立した教育用プロジェクトです。Scratch Foundationの公式製品・公認製品ではありません。</p><p>Block2Script is an independent educational project based on the open-source Scratch editor. It is not an official Scratch product and is not affiliated with or endorsed by the Scratch Foundation.</p><p>左は${EDITOR_BASE}のエディター・VM・ブロック・ペイントを読み込んだものです。衣装や音、複数スプライト、独自ブロック、Scratchの拡張機能もScratch自身が管理・実行します。</p><p>作品の読込・保存は左の「ファイル」メニュー、拡張追加は左下の拡張ボタンを使います。ブロックを選ぶと対応コードが青く光り、コードをクリックすると対応ブロックが光ります。未反映コードの編集中は誤対応を避けるためハイライトを解除します。</p><p>右のコードは、現在選択しているスプライトのブロックを表します。Scratchのブロックを変更するとコードが更新され、必要な変数・リストは「検証」に作成予定を表示し、「Scratchへ反映」で自動作成します。生徒モードでは「検証」で対象と変更内容を確認した後、「Scratchへ反映」を押します。先生・開発モードでは自動反映を選べます。</p><pre>scratch.script({x: 40, y: 40}, () => {\n  scratch.event_whenflagclicked({});\n  scratch.motion_movesteps({STEPS: 50});\n  scratch.control_repeat({TIMES: 10,\n    SUBSTACK: () => {\n      scratch.motion_turnright({DEGREES: 15});\n      scratch.control_wait({DURATION: 0.1});\n    }\n  });\n});</pre><p>命令名・入力名はScratch本体の定義を使います。<code>scratch.operator_add({NUM1: 10, NUM2: 20})</code> のようにレポーターを入力に入れられます。拡張機能のブロックも、読み込まれた定義を命令一覧へ追加します。</p><p>「AI用仕様をコピー」の内容をAIへ渡し、生成されたコードを右に貼り付け、「検証」で確認してから「Scratchへ反映」を押します。AIの自動呼び出しはまだ接続していません。既存の <code>/*@scratch ...*/</code> コメントはブロックIDやシャドー・独自ブロックの情報です。普段は折りたたんでいます。</p><p>入力途中や未対応のJavaScript構文では最後のブロックを残します。コードが不正な間はScratch側からコードを上書きしません。スプライトを切り替えても編集中のコードをスプライト別に保持します。コードを反映すると実行中のスクリプトは停止します。</p><p class="warning">Scratch全機能の双方向編集を目指す開発版です。任意のJavaScriptの関数・ライブラリ・文法をScratchへ変換するものではありません。ブロック定義に対応する呼び出し形式を使います。ハードウェア拡張や一部特殊な独自ブロックは別途実機検証が必要です。公式Scratchサイトのログイン・共有・クラウド変数サービスは接続していません。</p><details id="extension-information"><summary>拡張の保存範囲・通信・機器</summary><div id="extension-information-list"></div></details></dialog>`;
 let studentMode=true,preview=null,repairText="";
 const recoveryStore=new RecoveryStore();
 let checkpointQueue=Promise.resolve(),backupTimer,revision=0,savedRevision=0,restoring=false,operationBusy=false,connectedVM;
 let vm,native,controller,currentId,base={},updating=false,dirty=false,timer,changeTimer,undoStack=[],schemaCache=new Map(),drafts=new Map();
 const editor=new EditorView({state:EditorState.create({doc:'',extensions:[basicSetup,correspondenceField,EditorView.domEventHandlers({click:event=>{correspondence.click(event);return false;}}),javascript(),EditorView.lineWrapping,syntaxHighlighting(HighlightStyle.define([{tag:tags.keyword,color:'#c6a0f6'},{tag:tags.string,color:'#a6da95'},{tag:tags.number,color:'#f5a97f'},{tag:tags.comment,color:'#75839e'},{tag:tags.function(tags.variableName),color:'#8bd5ff'}])),EditorView.theme({'&':{backgroundColor:'#182030',color:'#e2e8f0'},'.cm-scroller':{fontFamily:'Consolas,monospace',fontSize:'14px',lineHeight:'1.75'},'.cm-gutters':{backgroundColor:'#182030',color:'#71809b',border:0},'.cm-activeLine':{backgroundColor:'#ffffff08'},'.cm-activeLineGutter':{backgroundColor:'#ffffff08'},'.cm-selectionBackground, &.cm-focused .cm-selectionBackground':{backgroundColor:'#4c4674'},'.cm-cursor':{borderLeftColor:'#c6a0f6'}},{dark:true}),keymap.of([{key:'Mod-Enter',run:()=>{studentMode?validate():apply();return true;}}]),EditorView.updateListener.of(u=>{if(u.docChanged&&!updating){draftChanged();}})]}),parent:$('#editor')});
 const correspondence=connectCorrespondence({editor,getNative:()=>native,isDirty:()=>dirty,getTargetId:()=>currentId});
+function withWorkspaceEventsPaused(action){
+ const events=native.getController().ScratchBlocks.Events;events.disable();
+ try{return action();}finally{events.enable();}
+}
 function generateCode(target){const mapping=exportCodeWithMap(base,target.blocks._scripts,target.id);setCode(mapping.code);correspondence.update(mapping);}
 function status(text,kind='ok'){$('#status').textContent=text;$('#status').dataset.kind=kind;}
 function setCode(code){correspondence.clear();updating=true;editor.dispatch({changes:{from:0,to:editor.state.doc.length,insert:code}});updating=false;foldMetadata();}
@@ -69,17 +74,7 @@ function updateCatalog(){
  const text=opcodes.filter(n=>!n.startsWith('math_')&&n!=='text').map(n=>`scratch.${n}(...)`).join('\n');
  if($('#api-list').textContent!==text)$('#api-list').textContent=text;
 }
-function normalizeReferences(graph,target){
- const stage=vm.runtime.getTargetForStage(),pending=[];
- for(const b of Object.values(graph.blocks))for(const [key,field]of Object.entries(b.fields))if(['VARIABLE','LIST','BROADCAST_OPTION'].includes(key)){
-  const type=key==='LIST'?'list':key==='BROADCAST_OPTION'?'broadcast_msg':'';
-  const containers=type==='broadcast_msg'?[stage]:[target,stage];
-  let variable=containers.map(t=>t.variables[field.id]).find(v=>v&&v.name===String(field.value)&&v.type===type)??containers.map(t=>Object.values(t.variables).find(v=>v.name===String(field.value)&&v.type===type)).find(Boolean);
-  if(!variable){const queued=pending.find(p=>p.name===String(field.value)&&p.type===type);const collision=containers.some(t=>field.id&&t.variables[field.id]);const id=queued?.id??(!collision&&field.id?field.id:crypto.randomUUID());if(!queued)pending.push({id,name:String(field.value),type,target:type==='broadcast_msg'?stage:target});variable={id};}
-  field.id=variable.id;if(type!=='broadcast_msg')field.variableType=type;
- }
- return pending;
-}
+function normalizeReferences(graph,target){return planReferences(vm,target,graph);}
 function validateConnections(graph){
  for(const b of Object.values(graph.blocks)){
  const def=schema(b.opcode,{mutation:b.mutation});if(!def)throw new Error(`ブロック「${b.opcode}」の定義を確認できません`);
@@ -96,8 +91,7 @@ function validateConnections(graph){
  }
 }
 function targetContext(target){
- const stage=vm.runtime.getTargetForStage();
- return JSON.stringify({blocks:target.blocks._blocks,scripts:target.blocks._scripts,variables:[target,stage].map(t=>Object.values(t.variables).map(v=>[v.id,v.name,v.type]).sort((a,b)=>String(a[0]).localeCompare(String(b[0]))))});
+ return JSON.stringify({targetId:target.id,targets:vm.runtime.targets.filter(t=>t.isOriginal).map(t=>({id:t.id,blocks:t.blocks._blocks,scripts:t.blocks._scripts,variables:Object.values(t.variables).map(v=>[v.id,v.name,v.type]).sort((a,b)=>String(a[0]).localeCompare(String(b[0])))}))});
 }
 function invalidatePreview(){preview=null;$('#preview').hidden=true;$('#apply').disabled=studentMode;}
 function draftChanged(){
@@ -117,7 +111,6 @@ function prepareGraph(){
  const target=vm.editingTarget,graph=compileCode(source,{base,schema});
  if(Object.keys(graph.blocks).length>3000){const error=new Error('ブロックが多すぎます');error.code='TOO_LARGE';throw error;}
  validateConnections(graph);const pending=normalizeReferences(graph,target);
- if(studentMode&&pending.some(p=>p.type!=='broadcast_msg')){const error=new Error('必要な変数またはリストがありません');error.code='MISSING_VARIABLE';error.names=pending.filter(p=>p.type!=='broadcast_msg').map(p=>p.name);throw error;}
  return {source,targetId:target.id,context:targetContext(target),graph,pending};
 }
 function validate(){
@@ -127,9 +120,17 @@ function validate(){
   preview=prepareGraph();const target=vm.editingTarget;
   const count=Object.keys(preview.graph.blocks).length,oldCount=Object.keys(target.blocks._blocks).length;
   const warning=count===0?'空のコードです。現在のブロックをすべて取り除きます。':Object.values(preview.graph.blocks).some(b=>b.opcode==='control_forever')?'ずっと繰り返す処理があります。必要なときは赤い停止ボタンで止めてください。':'';
-  $('#preview').textContent=(target.isStage?'ステージ':'スプライト')+'「'+target.getName()+'」の '+oldCount+' ブロックを '+count+' ブロックに置き換えます。'+(preview.pending.length?' 新しいメッセージを '+preview.pending.length+' 件作成します。':'')+' '+warning;
+  const display=$('#preview');display.textContent=(target.isStage?'ステージ':'スプライト')+'「'+target.getName()+'」の '+oldCount+' ブロックを '+count+' ブロックに置き換えます。 '+warning;
+  for(const [type,label] of [['','変数'],['list','リスト']]){
+   const planned=preview.pending.filter(p=>p.type===type);if(!planned.length)continue;
+   const title=document.createElement('p'),list=document.createElement('ul');title.textContent='新しく作る'+label+'：'+planned.length+'個（'+(target.isStage?'全体用':'このスプライト用')+'）';
+   for(const asset of planned){const row=document.createElement('li');row.textContent=asset.name;list.appendChild(row);}display.append(title,list);
+  }
+  const messages=preview.pending.filter(p=>p.type==='broadcast_msg').length;
+  if(messages){const info=document.createElement('p');info.textContent='新しく作るメッセージ：'+messages+'個';display.appendChild(info);}
+  if(preview.pending.some(p=>p.type!=='broadcast_msg')){const info=document.createElement('p');info.textContent='「Scratchへ反映」を押すと、自動で作成します。';display.appendChild(info);}
   $('#preview').hidden=false;$('#apply').disabled=false;$('#copy-repair').hidden=true;
-  status('検証できました。反映先と内容を確認して「Scratchへ反映」を押してください');return true;
+  status('コードの確認ができました。反映先と内容を確認して「Scratchへ反映」を押してください');return true;
  }catch(error){showError(error);return false;}
 }
 async function apply(){
@@ -139,9 +140,9 @@ async function apply(){
   const result=studentMode?assertPreview(preview,{source:editor.state.doc.toString(),targetId:target.id,context:targetContext(target)}):prepareGraph();
   operationBusy=true;$('#apply').disabled=true;await saveCheckpoint('反映前');
   assertPreview(result,{source:editor.state.doc.toString(),targetId:vm.editingTarget.id,context:targetContext(vm.editingTarget)});
-  updating=true;const snapshot=commitGraph(vm,target,result.graph,result.pending);
+  updating=true;const snapshot=withWorkspaceEventsPaused(()=>commitGraph(vm,target,result.graph,result.pending));
   undoStack.push(snapshot);if(undoStack.length>30)undoStack.shift();
-  updating=false;dirty=false;drafts.delete(currentId);base=structuredClone(target.blocks._blocks);invalidatePreview();
+  updating=false;dirty=false;schemaCache.clear();drafts.delete(currentId);base=structuredClone(target.blocks._blocks);invalidatePreview();
   generateCode(target);status('⇄ ScriptをScratch本体へ反映しました');$('#target').textContent=(target.isStage?'ステージ':'スプライト')+': '+target.getName()+' · '+Object.keys(base).length+' ブロック';return true;
  }catch(error){updating=false;dirty=true;drafts.set(currentId,editor.state.doc.toString());invalidatePreview();showError(error);return false;}finally{operationBusy=false;}
 }
@@ -152,14 +153,26 @@ $('#copy-repair').onclick=async()=>{try{await navigator.clipboard.writeText(repa
 $('#save-code').onclick=()=>download(new Blob([editor.state.doc.toString()],{type:'text/plain;charset=utf-8'}),datedFilename(APP_NAME+'-'+(vm?.editingTarget?.getName()??'code'),'b2s'));
 window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==$('#scratch-frame').contentWindow||e.data?.type!=='scratch-native-ready')return;
  native=e.source.scratchNative;vm=native.vm;
- if(connectedVM===vm){refresh();return;}connectedVM=vm;installRecovery();
+ if(connectedVM===vm){refresh();return;}connectedVM=vm;
+ const connectedNative=native,emitWorkspace=vm.emitWorkspaceUpdate;
+ vm.emitWorkspaceUpdate=function(...args){return withWorkspaceReferenceIds(this,connectedNative.getController()?.workspace,()=>emitWorkspace.apply(this,args));};
+ installRecovery();
  const changed=()=>{if(updating)return;clearTimeout(changeTimer);changeTimer=setTimeout(refresh,180);};
  vm.runtime.on('PROJECT_CHANGED',changed);vm.on('targetsUpdate',changed);vm.on('workspaceUpdate',changed);vm.on('BLOCKSINFO_UPDATE',()=>{schemaCache.clear();changed();});
  vm.runtime.on('PROJECT_LOADED',()=>{correspondence.clear();drafts.clear();currentId=null;dirty=false;undoStack=[];invalidatePreview();changed();});
  native.state.store.subscribe(changed);refresh();
 });
 $('#apply').onclick=apply;
-$('#undo').onclick=()=>{const item=undoStack.pop();if(!item){status('戻せるコード反映はありません','pending');return;}const target=vm.runtime.getTargetById(item.targetId);if(!target)return;vm.setEditingTarget(target.id);updating=true;applyGraph(vm,target,item.graph);for(const p of item.variables??[])p.target.deleteVariable(p.id);updating=false;dirty=false;drafts.delete(target.id);currentId=null;refresh();status('前のScratchブロックに戻しました');};
+$('#undo').onclick=()=>{
+ if(operationBusy)return;const item=undoStack.at(-1);if(!item){status('戻せるコード反映はありません','pending');return;}
+ const target=vm.runtime.getTargetById(item.targetId);if(!target){status('元のスプライトがないため戻せません','error');return;}
+ operationBusy=true;
+ try{
+  vm.setEditingTarget(target.id);updating=true;const retained=withWorkspaceEventsPaused(()=>undoGraph(vm,target,item));undoStack.pop();
+  updating=false;dirty=false;schemaCache.clear();drafts.delete(target.id);currentId=null;invalidatePreview();refresh();
+  status('前のScratchブロックに戻しました'+(retained.length?'。別の処理で使われている、または名前を変更した変数・リストなどは残しました。':''));
+ }catch(error){updating=false;showError(error);}finally{operationBusy=false;}
+};
 $('#metadata').onclick=()=>{unfoldAll(editor);};
 $('#demo').onclick=()=>{
  if(!vm?.editingTarget)return;const source=`scratch.script({x: 60, y: 60}, () => {\n  scratch.event_whenflagclicked({});\n  scratch.looks_say({MESSAGE: "本物のScratchと連動したよ！"});\n  scratch.control_repeat({TIMES: 10, SUBSTACK: () => {\n    scratch.motion_movesteps({STEPS: 10});\n    scratch.motion_turnright({DEGREES: 15});\n    scratch.control_wait({DURATION: 0.15});\n  }});\n});`;

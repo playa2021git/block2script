@@ -20,7 +20,7 @@ try{
  await type('fetch("https://should-never-run.invalid/");');assert.equal(await graph(),before,'Paste changed VM');assert.equal(await page.locator('#apply').isDisabled(),true);
  await page.locator('#validate').click();assert.equal(await graph(),before);assert.match(await page.locator('#status').textContent(),/理由:.*[\s\S]*次にすること:.*[\s\S]*AIに相談:/);assert.equal(requests.some(url=>url.includes('should-never-run.invalid')),false);
  await type('scratch.script({}, () => { scratch.event_whenkeypressed({KEY_OPTION: "not-a-key"}); });');await page.locator('#validate').click();assert.equal(await page.locator('#apply').isDisabled(),true);assert.match(await page.locator('#status').textContent(),/メニュー/);assert.equal(await graph(),before);
- await type('scratch.script({}, () => { scratch.data_setvariableto({VARIABLE: "missing-score", VALUE: 1}); });');await page.locator('#validate').click();assert.equal(await page.locator('#apply').isDisabled(),true);assert.match(await page.locator('#status').textContent(),/変数/);assert.equal(await graph(),before);
+ await type('scratch.script({}, () => { scratch.data_setvariableto({VARIABLE: "missing-score", VALUE: 1}); });');await page.locator('#validate').click();assert.equal(await page.locator('#apply').isEnabled(),true);assert.match(await page.locator('#preview').textContent(),/新しく作る変数：1個/);assert.match(await page.locator('#preview').textContent(),/missing-score/);assert.equal(await graph(),before);
  await page.locator('#demo').click(); // invalid source plus sample remains invalid; replace with valid source.
  const valid='scratch.script({x:40,y:50}, () => { scratch.event_whenflagclicked({}); scratch.motion_movesteps({STEPS: 10}); });';
  await type(valid);await page.locator('#validate').click();assert.equal(await page.locator('#apply').isEnabled(),true);
@@ -32,6 +32,6 @@ try{
  await page.locator('#mode').selectOption('student');assert.equal(await page.locator('#auto-sync').isChecked(),false);assert.equal(await page.locator('#auto-sync').isDisabled(),true);
  await page.locator('#verify').click();assert.match(await page.locator('#status').textContent(),/差はありません/);
  await page.screenshot({path:'stretch3-base/qa/student-mode.png'});
- assert.deepEqual(errors,[]);await writeFile('stretch3-base/qa/student-result.json',JSON.stringify({pass:true,checks:['student default','sample/validation/save do not mutate VM','explicit apply and Undo','arbitrary fetch rejection','menu rejection','missing variable rejection','target change invalidates preview','teacher auto-sync opt-in','roundtrip'],errors},null,2));
+ assert.deepEqual(errors,[]);await writeFile('stretch3-base/qa/student-result.json',JSON.stringify({pass:true,checks:['student default','sample/validation/save do not mutate VM','explicit apply and Undo','arbitrary fetch rejection','menu rejection','missing variable creation preview without VM mutation','target change invalidates preview','teacher auto-sync opt-in','roundtrip'],errors},null,2));
  console.log('Student Mode safety checks passed; browser errors: 0.');
 }finally{await browser.close();}
