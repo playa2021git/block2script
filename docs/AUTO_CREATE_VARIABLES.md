@@ -1,7 +1,9 @@
 # Scriptで必要な変数・リストの自動作成
 
-基準コミット: `732e0d4e7a465477168f595ae5d9313764ff8e14`  
-開発ブランチ: `feature/auto-create-script-variables`  
+基準コミット: `732e0d4e7a465477168f595ae5d9313764ff8e14`
+
+開発ブランチ: `feature/auto-create-script-variables`
+
 確認日: 2026-11-12（日本時間）
 
 ## 生徒の操作
