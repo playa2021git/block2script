@@ -1,6 +1,6 @@
 import './style.css';
 import {extensionRegistry,loadedExtensions} from './extension-registry.js';
-import {buildSpecification,diagnoseEnvironment} from './lesson-tools.js';
+import {buildSpecification,buildRepairRequest,diagnoseEnvironment} from './lesson-tools.js';
 import {APP_NAME,DSL_NAME,EDITOR_BASE} from './config.js';
 document.title = `${APP_NAME} | Blocks ⇄ Script`; 
 import {exportCode,exportCodeWithMap,compileCode,applyGraph} from './bridge.js';
@@ -76,6 +76,7 @@ function updateCatalog(){
 }
 function normalizeReferences(graph,target){return planReferences(vm,target,graph);}
 function validateConnections(graph){
+ const fail=(b,message)=>{const error=new Error(`${graph.lines[b.id]}行目: ${message}`);error.code='INVALID_CONNECTION';throw error;};
  for(const b of Object.values(graph.blocks)){
  const def=schema(b.opcode,{mutation:b.mutation});if(!def)throw new Error(`ブロック「${b.opcode}」の定義を確認できません`);
  for(const [name,options] of Object.entries(def.menus??{})){
@@ -84,10 +85,10 @@ function validateConnections(graph){
   // Preserve an unchanged saved dynamic label while external metadata is unavailable.
   // New/edited values still have to belong to the current menu; static menus stay strict.
   const preserved=def.dynamicMenus?.includes(name)&&original?.opcode===b.opcode&&String(original.fields[name]?.value)===value;
-  if(options.length&&!options.includes(value)&&!preserved){const error=new Error('不正なメニュー値: '+name);error.code='INVALID_MENU';throw error;}
+  if(options.length&&!options.includes(value)&&!preserved){const error=new Error(`${graph.lines[b.id]}行目: 命令「${b.opcode}」の「${name}」に値「${value}」は使えません。使える値: ${options.map(v=>JSON.stringify(v)).join('、')}`);error.code='INVALID_MENU';throw error;}
  }
- if(b.next&&!def.next)throw new Error(`「${b.opcode}」の下には命令をつなげられません`);
- for(const [name,i] of Object.entries(b.inputs)){const child=graph.blocks[i.block];if(!child)continue;const childDef=schema(child.opcode,{mutation:child.mutation});if(def.inputs[name]?.statement){if(!childDef?.previous)throw new Error(`「${name}」には命令ブロックを指定してください`);}else if(!childDef?.output)throw new Error(`「${name}」には数値・文字列・レポーターを指定してください`);}
+ if(b.next&&!def.next)fail(b,`「${b.opcode}」の下には命令をつなげられません。次の命令を別のスクリプトに分けてください`);
+ for(const [name,i] of Object.entries(b.inputs)){const child=graph.blocks[i.block];if(!child)continue;const childDef=schema(child.opcode,{mutation:child.mutation});if(def.inputs[name]?.statement){if(!childDef?.previous)fail(b,`「${b.opcode}」の引数「${name}」に「${child.opcode}」は使えません。命令ブロックを指定してください`);}else if(!childDef?.output)fail(b,`「${b.opcode}」の引数「${name}」に命令「${child.opcode}」は使えません。数値・文字列・値を返すブロックを指定してください`);}
  }
 }
 function targetContext(target){
@@ -102,13 +103,13 @@ function draftChanged(){
  clearTimeout(timer);if(!studentMode&&$('#auto-sync').checked)timer=setTimeout(apply,700);
 }
 function showError(error){
- const help=studentError(error,DSL_NAME);repairText=help.ai;$('#copy-repair').hidden=false;
+ const help=studentError(error,DSL_NAME,{isExtensionLoaded:id=>vm.extensionManager.isExtensionLoaded(id)});repairText=help.text;$('#copy-repair').hidden=false;
  status(studentMode?help.text:help.text+'\n詳細: '+error.message,'error');
 }
 function prepareGraph(){
  const source=editor.state.doc.toString();
  if(source.length>200000){const error=new Error('コードが長すぎます');error.code='TOO_LARGE';throw error;}
- const target=vm.editingTarget,graph=compileCode(source,{base,schema});
+ const target=vm.editingTarget,graph=compileCode(source,{base,schema,knownOpcodes:Object.keys(controller.ScratchBlocks.Blocks)});
  if(Object.keys(graph.blocks).length>3000){const error=new Error('ブロックが多すぎます');error.code='TOO_LARGE';throw error;}
  validateConnections(graph);const pending=normalizeReferences(graph,target);
  return {source,targetId:target.id,context:targetContext(target),graph,pending};
@@ -149,7 +150,7 @@ async function apply(){
 $('#mode').onchange=()=>{studentMode=$('#mode').value==='student';clearTimeout(timer);$('#auto-sync').checked=false;$('#auto-sync').disabled=studentMode;invalidatePreview();$('#mode-help').textContent=studentMode?'貼り付け → 検証 → 反映。実行は緑の旗。':'自動反映は選択したときだけ有効です。';status(studentMode?'生徒モードです。コードは検証してから反映します':'先生・開発モードです。必要に応じて自動反映を選べます');};
 $('#auto-sync').onchange=()=>{clearTimeout(timer);if(!studentMode&&$('#auto-sync').checked&&dirty)timer=setTimeout(apply,700);};
 $('#validate').onclick=validate;
-$('#copy-repair').onclick=async()=>{try{await navigator.clipboard.writeText(repairText);status('AIへの修正依頼をコピーしました');}catch{status('コピーできませんでした。エラー欄の「AIに相談」の文章を選択してコピーしてください','error');}};
+$('#copy-repair').onclick=async()=>{try{await navigator.clipboard.writeText(buildRepairRequest(repairText,currentSpecification()));status('AIへの修正依頼をコピーしました');}catch{status('コピーできませんでした。エラー欄をコピーし、「仕様JSONを保存」で保存したファイルもAIに渡してください','error');}};
 $('#save-code').onclick=()=>download(new Blob([editor.state.doc.toString()],{type:'text/plain;charset=utf-8'}),datedFilename(APP_NAME+'-'+(vm?.editingTarget?.getName()??'code'),'b2s'));
 window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==$('#scratch-frame').contentWindow||e.data?.type!=='scratch-native-ready')return;
  native=e.source.scratchNative;vm=native.vm;

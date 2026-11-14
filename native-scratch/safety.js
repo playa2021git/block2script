@@ -1,3 +1,4 @@
+import extensionPolicies from './extension-policies.json' with {type:'json'};
 import {applyGraph} from './bridge.js';
 import {variableIsReferenced} from './references.js';
 function variableSnapshot(vm,target){
@@ -65,7 +66,7 @@ export function assertPreview(preview,{source,targetId,context}){
  if(!preview||preview.source!==source||preview.targetId!==targetId||preview.context!==context){const error=new Error('コードまたは反映先が変わりました。もう一度検証してください');error.code='STALE_PREVIEW';throw error;}
  return preview;
 }
-export function studentError(error,dslName){
+export function studentError(error,dslName,{isExtensionLoaded}={}){
  const message=String(error?.message||error);
  let reason='構文や命令、入力値が、このアプリで使える形と異なる可能性があります。',next='コードを確認し、現在の命令一覧を使って書き直してから「検証」を押してください。';
  if(error.code==='BACKUP_FAILED'){reason='反映前の作品をブラウザーに保存できませんでした。';next='.sb3と未反映コードをファイルに保存し、ブラウザーの空き容量を確認してから再度試してください。';}
@@ -77,11 +78,25 @@ export function studentError(error,dslName){
  else if(error.code==='AMBIGUOUS_REFERENCE'){reason=message;next='使いたい変数やリストをブロック側で選び、そのブロックから取り出したScriptを使って、もう一度検証してください。';}
  else if(error.code==='REFERENCE_CONFLICT'){reason=message;next='対象スプライトと変数・リストの名前を確認し、使いたいものを選んだブロックからScriptを取り出してください。';}
  else if(error.code==='INVALID_REFERENCE'){reason=message;next='変数・リスト・メッセージに空欄ではない名前を指定して、もう一度検証してください。';}
- else if(error.code==='INVALID_MENU'){reason='選択肢にない値がメニューに指定されています。';next='AI用の命令一覧を確認し、ブロックのメニューにある値を使ってください。';}
+ else if(['SCRIPT_VALIDATION','SCRIPT_SYNTAX','UNKNOWN_ARGUMENT','INVALID_MENU','INVALID_CONNECTION'].includes(error.code)){
+  reason=message.replace(/^\d+行目:\s*/,'');
+  next=error.suggestions?.length?`「${error.argument}」の修正候補: ${error.suggestions.map(name=>'「'+name+'」').join('、')}。使える引数と照合して修正し、もう一度「検証」を押してください。`:error.code==='SCRIPT_SYNTAX'?'表示された位置の括弧・引用符・カンマを確認し、修正してからもう一度「検証」を押してください。':'上記の命令・引数・選択肢に合わせてコードを修正し、もう一度「検証」を押してください。';
+ }
  else if(error.code==='TOO_LARGE'){reason='一度に反映するコードやブロックの量が多すぎます。';next='コードを小さく分けてから、もう一度検証してください。';}
+ else if(error.code==='UNKNOWN_OPCODE'){
+  const extension=extensionPolicies.find(info=>typeof error.opcode==='string'&&error.opcode.startsWith(info.id+'_'));
+  if(extension&&isExtensionLoaded?.(extension.id)===false){
+   reason=`「${error.opcode}」を使うための拡張機能「${extension.name}」がまだ追加されていません。`;
+   next=`Scratch画面の左下にある「拡張機能」ボタンを押して、「${extension.name}」を選択してください。追加後、もう一度「検証」を押してください。`;
+  }else{
+   reason=`命令「${error.opcode}」が見つかりません。`;
+   next=extension&&isExtensionLoaded?.(extension.id)===true?`拡張機能「${extension.name}」は追加済みです。AI用の命令一覧で命令名を確認し、修正してからもう一度「検証」を押してください。`:'AI用の命令一覧で命令名と必要な拡張機能を確認し、もう一度「検証」を押してください。';
+  }
+  if(error.suggestions?.length)next+=` 命令名の修正候補: ${error.suggestions.map(name=>'scratch.'+name).join('、')}。候補の引数もAI用の命令一覧で確認してください。`;
+ }
  else if(/登録されていません|定義を確認できません/.test(message)){reason='必要な拡張がまだ追加されていないか、命令名が間違っています。';next='使用する拡張を追加し、命令名を確認してから、もう一度検証してください。';}
  const line=message.match(/^(\d+)行目/);
- const ai=error.code==='BACKUP_FAILED'?'ブラウザーの自動保存が失敗しました。作品と未反映コードを失わずに保存する方法と、空き容量の確認・再試行手順を教えてください。':`現在ロードされている命令だけを使い、${dslName}としてコードを修正してください。${reason}通常のJavaScriptや外部APIは使わないでください。`;
+ const ai=error.code==='UNKNOWN_OPCODE'&&reason.includes('まだ追加されていません')?`${reason}${next}コードの修正前に、この追加手順を案内してください。`:error.code==='BACKUP_FAILED'?'ブラウザーの自動保存が失敗しました。作品と未反映コードを失わずに保存する方法と、空き容量の確認・再試行手順を教えてください。':`現在ロードされている命令だけを使い、${dslName}としてコードを修正してください。${reason}修正手順: ${next}通常のJavaScriptや外部APIは使わないでください。`;
  return {text:`${line?line[1]+'行目の':''}コードを反映できませんでした。\n理由: ${reason}\n次にすること: ${next}\nAIに相談: ${ai}`,ai};
 }
 

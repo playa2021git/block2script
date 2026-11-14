@@ -1,3 +1,4 @@
+import {suggestNames} from './diagnostics.js';
 import {parse} from 'acorn';
 import {referenceType} from './references.js';
 const clone=v=>structuredClone(v);
@@ -62,10 +63,10 @@ export function exportCodeWithMap(blocks,scripts,targetId=null){
  return {code:result.text,ranges:result.ranges.map(range=>({...range,targetId,startLine:lineAt(range.startOffset),endLine:lineAt(range.endOffset)}))};
 }
 
-export function compileCode(code,{base={},schema=()=>null,uid=()=>crypto.randomUUID()}={}){
- const comments=[];let ast;try{ast=parse(code,{ecmaVersion:'latest',locations:true,onComment:comments});}catch(e){throw new Error(`${e.loc?.line??1}行目: JavaScriptの構文を確認してください`);}
- const result=Object.create(null),scripts=[],used=new Set();
- const fail=(n,msg)=>{throw new Error(`${n?.loc?.start?.line??1}行目: ${msg}`);};
+export function compileCode(code,{base={},schema=()=>null,knownOpcodes=[],uid=()=>crypto.randomUUID()}={}){
+ const comments=[];let ast;try{ast=parse(code,{ecmaVersion:'latest',locations:true,onComment:comments});}catch(e){const error=new Error(`${e.loc?.line??1}行目: 構文エラー（${e.loc?.column+1||1}文字目）: ${e.message}`);error.code='SCRIPT_SYNTAX';throw error;}
+ const result=Object.create(null),scripts=[],used=new Set(),lines={};
+ const fail=(n,msg,details={})=>{const error=new Error(`${n?.loc?.start?.line??1}行目: ${msg}`);Object.assign(error,{code:'SCRIPT_VALIDATION',...details});throw error;};
  function staticValue(n){
   if(!n) return undefined;
   if(n.type==='Literal'&&['string','number','boolean'].includes(typeof n.value)||n?.type==='Literal'&&n.value===null)return n.value;
@@ -86,8 +87,12 @@ export function compileCode(code,{base={},schema=()=>null,uid=()=>crypto.randomU
   let storedMeta;try{storedMeta=annotation?JSON.parse(annotation.value.trimStart().slice(9)):undefined;}catch{fail(n,'Scratchメタデータのコメントが不正です');}
   const args=properties(n.arguments[0]),meta=staticValue(n.arguments[1])??storedMeta??{},id=meta.id??uid();
   if(typeof id!=='string'||used.has(id))fail(n,'ブロックIDが重複しているか不正です');used.add(id);
+  lines[id]=n.loc.start.line;
   const old=base[id],def=schema(opcode,meta);
-  if(!old&&!def)fail(n,`「${opcode}」はScratchに登録されていません。拡張機能を先に読み込んでください`);
+  if(!old&&!def){
+   const error=new Error(`${n.loc.start.line}行目: 「${opcode}」はScratchに登録されていません。拡張機能を先に読み込んでください`);
+   error.code='UNKNOWN_OPCODE';error.opcode=opcode;error.suggestions=suggestNames(opcode,knownOpcodes);throw error;
+  }
   if(old&&old.opcode!==opcode)fail(n,'ブロックの種類を変える場合は第2引数の id を削除してください');
   const b=old?clone(old):{id,opcode,inputs:{},fields:{},next:null,parent:null,shadow:false,topLevel:false};
   const {shadows,references,topLevelAbsent,...rest}=meta;
@@ -109,7 +114,7 @@ export function compileCode(code,{base={},schema=()=>null,uid=()=>crypto.randomU
     const value=staticValue(args[key]);if(value===null||typeof value==='object')fail(args[key],`${key} のフィールドには文字列か数値を指定してください`);
     b.fields[key]={...b.fields[key],name:key,value};continue;
    }
-   if(!inputs.has(key)&&!old)fail(args[key],`ブロック「${opcode}」に入力「${key}」はありません`);
+   if(!inputs.has(key))fail(args[key],`命令「${opcode}」に引数「${key}」はありません。使える引数: ${[...fields,...inputs].join('、')||'なし'}`,{code:'UNKNOWN_ARGUMENT',suggestions:suggestNames(key,[...fields,...inputs]),argument:key});
    const value=args[key],prior=old?.inputs?.[key],template=def?.inputs?.[key];
    let shadow=adoptShadow(shadows?.[key],id);
    if(!shadow&&prior?.shadow){const collect=child=>{if(!child||!base[child]||result[child])return;result[child]=clone(base[child]);for(const i of Object.values(base[child].inputs??{})){collect(i.block);collect(i.shadow);}};collect(prior.shadow);shadow=prior.shadow;if(result[shadow])result[shadow].parent=id;}
@@ -136,7 +141,7 @@ export function compileCode(code,{base={},schema=()=>null,uid=()=>crypto.randomU
   }
   for(const key of inputs)if(!own(b.inputs,key)){
    if(key.startsWith('SUBSTACK'))b.inputs[key]={name:key,block:null,shadow:null};
-   else fail(n,`入力「${key}」がありません。既存の入力を省略せず指定してください`);
+   else fail(n,`命令「${opcode}」に必要な引数「${key}」がありません。「${key}: 値」を追加してください`);
   }
   return id;
  }
@@ -144,7 +149,7 @@ export function compileCode(code,{base={},schema=()=>null,uid=()=>crypto.randomU
  for(const n of ast.body){if(n.type==='EmptyStatement')continue;if(n.type!=='ExpressionStatement'||callName(n.expression)!=='script')fail(n,'scratch.script({x: 30, y: 30}, () => { ... }); の中にブロックを書いてください');const c=n.expression;if(c.arguments.length!==2)fail(n,'scriptには位置と命令の関数を指定してください');const pos=staticValue(c.arguments[0]);const id=callback(c.arguments[1],null);if(id){result[id].x=pos.x??30;result[id].y=pos.y??30;scripts.push(id);}}
  const reachable=new Set();function walk(id){if(!id||reachable.has(id))return;if(!result[id])throw new Error(`ブロック ${id} の接続が不正です`);reachable.add(id);const b=result[id];for(const i of Object.values(b.inputs)){walk(i.block);walk(i.shadow);}walk(b.next);}scripts.forEach(walk);
  for(const id of Object.keys(result))if(!reachable.has(id))delete result[id];
- return {blocks:result,scripts};
+ return {blocks:result,scripts,lines};
 }
 
 export function applyGraph(vm,target,graph){
