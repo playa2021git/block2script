@@ -96,7 +96,9 @@ export function studentError(error,dslName,{isExtensionLoaded}={}){
  }
  else if(/登録されていません|定義を確認できません/.test(message)){reason='必要な拡張がまだ追加されていないか、命令名が間違っています。';next='使用する拡張を追加し、命令名を確認してから、もう一度検証してください。';}
  const line=message.match(/^(\d+)行目/);
- const ai=error.code==='UNKNOWN_OPCODE'&&reason.includes('まだ追加されていません')?`${reason}${next}コードの修正前に、この追加手順を案内してください。`:error.code==='BACKUP_FAILED'?'ブラウザーの自動保存が失敗しました。作品と未反映コードを失わずに保存する方法と、空き容量の確認・再試行手順を教えてください。':`現在ロードされている命令だけを使い、${dslName}としてコードを修正してください。${reason}修正手順: ${next}通常のJavaScriptや外部APIは使わないでください。`;
- return {text:`${line?line[1]+'行目の':''}コードを反映できませんでした。\n理由: ${reason}\n次にすること: ${next}\nAIに相談: ${ai}`,ai};
+ const diagnostics=error.diagnostics?.length?error.diagnostics:[];
+ const related=diagnostics.length?'\n検出した未登録命令（構文・入力値の全検査は再検証時）:\n'+diagnostics.map(item=>`${item.lines.join('・')}行目: ${item.opcode}${item.suggestions.length?' → 修正候補: '+item.suggestions.join('、'):''}`).join('\n'):'';
+ const summary=`${line?line[1]+'行目: ':''}${reason}\n次にすること: ${next}${related}`;
+ const ai=error.code==='UNKNOWN_OPCODE'&&reason.includes('まだ追加されていません')?`${summary}\nコードの修正前に、この追加手順を案内してください。`:`${dslName}の検証結果:\n${summary}`;
+ return {text:`${line?line[1]+'行目の':''}コードを反映できませんでした。\n理由: ${reason}\n次にすること: ${next}${related}`,ai,summary};
 }
-

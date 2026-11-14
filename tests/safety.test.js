@@ -11,7 +11,7 @@ function fixture(fail){
 test('failed graph commit restores blocks and removes newly created variables',()=>{const f=fixture(true);assert.throws(()=>commitGraph(f.vm,f.target,{blocks:{},scripts:[]},f.pending),/workspace failure/);assert.deepEqual(f.target.blocks._blocks,f.original);assert.deepEqual(f.target.blocks._scripts,['a']);assert.deepEqual(f.target.variables,{});});
 test('successful commit returns the pre-change graph for Undo',()=>{const f=fixture(false);const undo=commitGraph(f.vm,f.target,{blocks:{},scripts:[]},f.pending);assert.deepEqual(undo.graph.blocks,f.original);assert.deepEqual(undo.graph.scripts,['a']);assert.equal(undo.variables.length,1);assert.equal(f.target.variables['new-var'].name,'score');});
 test('preview cannot apply changed code, another target, or changed block state',()=>{const p={source:'code',targetId:'sprite',context:'before'};assert.equal(assertPreview(p,{source:'code',targetId:'sprite',context:'before'}),p);for(const context of [{source:'changed',targetId:'sprite',context:'before'},{source:'code',targetId:'stage',context:'before'},{source:'code',targetId:'sprite',context:'after'}])assert.throws(()=>assertPreview(p,context),e=>e.code==='STALE_PREVIEW');});
-test('student errors include cause, next action and AI repair request',()=>{const error=new Error('internal detail');error.code='MISSING_VARIABLE';const result=studentError(error,'Block2Script Script');assert.match(result.text,/理由:/);assert.match(result.text,/次にすること:/);assert.match(result.text,/AIに相談:/);assert.doesNotMatch(result.text,/internal detail/);assert.match(result.ai,/Block2Script Script/);});
+test('student errors include cause, next action and AI repair request',()=>{const error=new Error('internal detail');error.code='MISSING_VARIABLE';const result=studentError(error,'Block2Script Script');assert.match(result.text,/理由:/);assert.match(result.text,/次にすること:/);assert.doesNotMatch(result.text,/AIに相談:/);assert.doesNotMatch(result.text,/internal detail/);assert.match(result.ai,/Block2Script Script/);});
 
 test('missing extensions give named setup steps at the failing line',()=>{
  for(const [id,name] of [['pen','ペン'],['music','音楽'],['translate','翻訳'],['tm2scratch','TM2Scratch']]){
@@ -60,4 +60,24 @@ test('missing inputs and syntax errors keep actionable details in student mode',
   let error;try{compileCode(source,{schema:()=>({inputs:{STEPS:{}},fields:{}})});}catch(e){error=e;}
   const result=studentError(error,'Block2Script Script');assert.match(result.text,pattern);assert.match(result.ai,pattern);
  }
+});
+
+test('all unknown commands are grouped, with argument-compatible candidates only',()=>{
+ const source=`scratch.script({},()=>{
+ scratch.pen_setPenParamTo({COLOR_PARAM:"color",VALUE:10});
+ scratch.pen_setPenParamTo({COLOR_PARAM:"brightness",VALUE:100});
+ scratch.pen_changePenParamBy({COLOR_PARAM:"brightness",VALUE:-3});
+ scratch.looks_say({MESSAGE:"scratch.pen_fake({})"});
+ // scratch.pen_fake({});
+ scratch["pen_setPenParamTo"]({COLOR_PARAM:"saturation",VALUE:100});
+});`;
+ const definitions={pen_setPenColorParamTo:{inputs:{COLOR_PARAM:{},VALUE:{}}},pen_setPenSizeTo:{inputs:{SIZE:{}}},pen_changePenColorParamBy:{inputs:{COLOR_PARAM:{},VALUE:{}}},looks_say:{inputs:{MESSAGE:{}}}};
+ let error;try{compileCode(source,{knownOpcodes:Object.keys(definitions),schema:name=>definitions[name]});}catch(e){error=e;}
+ assert.deepEqual(error.diagnostics,[
+ {opcode:'pen_setPenParamTo',lines:[2,3,7],suggestions:['pen_setPenColorParamTo']},
+ {opcode:'pen_changePenParamBy',lines:[4],suggestions:['pen_changePenColorParamBy']}
+ ]);
+ const result=studentError(error,'Block2Script Script',{isExtensionLoaded:()=>true});
+ assert.match(result.text,/2・3・7行目/);assert.match(result.text,/pen_changePenColorParamBy/);
+ assert.doesNotMatch(result.text,/pen_setPenSizeTo|AIに相談:/);
 });

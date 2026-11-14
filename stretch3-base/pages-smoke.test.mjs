@@ -8,6 +8,24 @@ try{
  const initial=await page.evaluate(()=>{const w=document.querySelector('#scratch-frame').contentWindow;return {iframe:document.querySelector('#scratch-frame').src,devices:w.requestedDevices,supported:Object.keys(w.scratchNative.stretch.supported),camera:!!w.scratchNative.getController().ScratchBlocks.Blocks.cameraselector_selectCamera};});assert.ok(initial.iframe.includes('/block2script/stretch3-dist/'));assert.equal(initial.devices,0);assert.equal(initial.supported.includes('cameraselector'),false);assert.equal(initial.camera,false);
  await page.locator('#help').click();assert.equal(await page.locator('header #stretch, header #save, header #load').count(),0);await page.locator('#extension-information summary').click();assert.equal(await page.locator('#extension-information-list section').count(),9);await page.locator('#close-help').click();
  await page.locator('#demo').click();assert.equal(await page.locator('#apply').isEnabled(),true);await page.locator('#apply').click();await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('反映しました'));await page.locator('#verify').click();assert.match(await page.locator('#status').textContent(),/差はありません/);await page.locator('#undo').click();
+ // Exercise the actual error UI and copy button with the reported pen typo.
+ const source=`scratch.script({},()=>{
+ scratch.pen_setPenParamTo({COLOR_PARAM:scratch.pen_menu_colorParam({colorParam:"color"}),VALUE:50});
+ scratch.pen_setPenParamTo({COLOR_PARAM:scratch.pen_menu_colorParam({colorParam:"brightness"}),VALUE:100});
+ scratch.pen_changePenParamBy({COLOR_PARAM:scratch.pen_menu_colorParam({colorParam:"brightness"}),VALUE:-3});
+});`;
+ const beforeRepair=await page.evaluate(()=>JSON.stringify(document.querySelector('#scratch-frame').contentWindow.scratchNative.vm.editingTarget.blocks._blocks));
+ await page.locator('.cm-content').click();await page.keyboard.press('Control+a');await page.keyboard.insertText(source);
+ await page.locator('#validate').click();assert.match(await page.locator('#status').textContent(),/「ペン」がまだ追加されていません/);
+ await page.evaluate(async()=>{await document.querySelector('#scratch-frame').contentWindow.scratchNative.vm.extensionManager.loadExtensionURL('pen');});
+ await page.locator('#validate').click();
+ const diagnostic=await page.locator('#status').textContent();assert.match(diagnostic,/2・3行目/);assert.match(diagnostic,/pen_changePenColorParamBy/);assert.doesNotMatch(diagnostic,/pen_setPenSizeTo|AIに相談:/);
+ await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.repairCopy=text;}}}));
+ await page.locator('#copy-repair').click();const copied=await page.evaluate(()=>window.repairCopy);
+ assert.ok(copied.includes(source));assert.match(copied,/pen_setPenColorParamTo/);assert.match(copied,/COLOR_PARAM/);
+ assert.doesNotMatch(copied,/saveScope|variableCreation|externalSave|motion_movesteps|pen_setPenSizeTo/);assert.ok(copied.length<4000);
+ assert.equal(await page.evaluate(()=>JSON.stringify(document.querySelector('#scratch-frame').contentWindow.scratchNative.vm.editingTarget.blocks._blocks)),beforeRepair);
+ await page.locator('.cm-content').click();await page.keyboard.press('Control+a');await page.keyboard.insertText('scratch.script({},()=>{});');assert.equal(await page.locator('#copy-repair').isVisible(),false);
  await page.locator('#help').click();assert.ok(await page.locator('#help-dialog a').filter({hasText:'対応ソース'}).count());await page.locator('#close-help').click();await page.screenshot({path:'stretch3-base/qa/pages-smoke.png'});
  assert.deepEqual(errors,[]);assert.deepEqual(failedAssets,[]);await writeFile('stretch3-base/qa/pages-smoke-result.json',JSON.stringify({pass:true,url,checks:['HTML/assets','subpath iframe/dynamic assets','Block2Bot','five licensed source extensions','Camera Selector excluded','no startup device requests','validate/apply/roundtrip/Undo','corresponding source link'],errors,failedAssets},null,2));console.log('Pages subpath smoke checks passed.');
 }finally{await browser.close();}

@@ -1,4 +1,4 @@
-import {suggestNames} from './diagnostics.js';
+import {suggestNames,unknownCommands} from './diagnostics.js';
 import {parse} from 'acorn';
 import {referenceType} from './references.js';
 const clone=v=>structuredClone(v);
@@ -91,7 +91,9 @@ export function compileCode(code,{base={},schema=()=>null,knownOpcodes=[],uid=()
   const old=base[id],def=schema(opcode,meta);
   if(!old&&!def){
    const error=new Error(`${n.loc.start.line}行目: 「${opcode}」はScratchに登録されていません。拡張機能を先に読み込んでください`);
-   error.code='UNKNOWN_OPCODE';error.opcode=opcode;error.suggestions=suggestNames(opcode,knownOpcodes);throw error;
+   error.code='UNKNOWN_OPCODE';error.opcode=opcode;
+   error.diagnostics=knownOpcodes.length?unknownCommands(ast,{knownOpcodes,schema}):[];
+   error.suggestions=error.diagnostics.find(item=>item.opcode===opcode)?.suggestions??suggestNames(opcode,knownOpcodes);throw error;
   }
   if(old&&old.opcode!==opcode)fail(n,'ブロックの種類を変える場合は第2引数の id を削除してください');
   const b=old?clone(old):{id,opcode,inputs:{},fields:{},next:null,parent:null,shadow:false,topLevel:false};
@@ -114,7 +116,7 @@ export function compileCode(code,{base={},schema=()=>null,knownOpcodes=[],uid=()
     const value=staticValue(args[key]);if(value===null||typeof value==='object')fail(args[key],`${key} のフィールドには文字列か数値を指定してください`);
     b.fields[key]={...b.fields[key],name:key,value};continue;
    }
-   if(!inputs.has(key))fail(args[key],`命令「${opcode}」に引数「${key}」はありません。使える引数: ${[...fields,...inputs].join('、')||'なし'}`,{code:'UNKNOWN_ARGUMENT',suggestions:suggestNames(key,[...fields,...inputs]),argument:key});
+   if(!inputs.has(key))fail(args[key],`命令「${opcode}」に引数「${key}」はありません。使える引数: ${[...fields,...inputs].join('、')||'なし'}`,{code:'UNKNOWN_ARGUMENT',opcode,suggestions:suggestNames(key,[...fields,...inputs]),argument:key});
    const value=args[key],prior=old?.inputs?.[key],template=def?.inputs?.[key];
    let shadow=adoptShadow(shadows?.[key],id);
    if(!shadow&&prior?.shadow){const collect=child=>{if(!child||!base[child]||result[child])return;result[child]=clone(base[child]);for(const i of Object.values(base[child].inputs??{})){collect(i.block);collect(i.shadow);}};collect(prior.shadow);shadow=prior.shadow;if(result[shadow])result[shadow].parent=id;}

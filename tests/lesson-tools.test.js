@@ -15,6 +15,17 @@ test('repair request bundles error line, candidate, complete source and real arg
  const specification={source:'scratch.script({},()=>{scratch.pen_setPenParamTo({});});',target:{name:'Block2Bot'},blocks:[{opcode:'pen_setPenColorParamTo',inputs:{VALUE:{}},fields:{COLOR_PARAM:{}}}]};
  const diagnostic='36行目: pen_setPenParamTo はありません。修正候補: pen_setPenColorParamTo';
  const request=buildRepairRequest(diagnostic,specification);
- assert.ok(request.includes(diagnostic));assert.ok(request.includes(JSON.stringify(specification,null,2)));
- assert.match(request,/コード全文/);assert.match(request,/拡張機能が未追加/);assert.match(request,/メタデータを保持/);
+ assert.ok(request.includes(diagnostic));assert.ok(request.includes(specification.source));assert.match(request,/pen_setPenColorParamTo/);assert.match(request,/COLOR_PARAM/);
+ assert.match(request,/コード全文/);assert.match(request,/拡張機能の追加が必要/);assert.match(request,/メタデータを保持/);
 });
+
+ test('repair request excludes unrelated specs, storage policies and verbose defaults',()=>{
+ const source='scratch.script({},()=>{scratch.pen_setPenParamTo({COLOR_PARAM:"color",VALUE:50});});';
+ const request=buildRepairRequest('36行目: pen_setPenParamTo → pen_setPenColorParamTo',{
+ source,saveScope:{sb3:'STORAGE_POLICY'},variableCreation:{apply:'VARIABLE_POLICY'},extensions:[{network:'NETWORK_POLICY'}],
+ blocks:[{opcode:'pen_setPenColorParamTo',inputs:{COLOR_PARAM:{kind:'value',defaultShadow:'SHADOW_INTERNAL'},VALUE:{kind:'value'}},fields:{},menus:{},previous:true}],target:{name:'Block2Bot'}
+ });
+ assert.doesNotMatch(request,/STORAGE_POLICY|VARIABLE_POLICY|NETWORK_POLICY|SHADOW_INTERNAL|previous/);
+ assert.equal(request.split(source).length-1,1);assert.equal(request.split('36行目').length-1,1);
+ assert.ok(request.length<1500);
+ });
