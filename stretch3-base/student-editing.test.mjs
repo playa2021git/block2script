@@ -100,3 +100,31 @@ test('Script input becomes available when the first sprite is ready', async () =
     assert.equal(await editor.innerText(), '// 最初の下書き');
     assert.equal(await page.locator('#validate').isEnabled(), true);
 });
+
+test('applying a new broadcast renders the sender and receiver in Scratch', async () => {
+    await openEditor();
+    await edit(`scratch.script({}, () => {
+      scratch.event_whenflagclicked({});
+      scratch.event_broadcast({BROADCAST_INPUT:scratch.event_broadcast_menu({BROADCAST_OPTION:"描画"})});
+    });
+    scratch.script({x:40,y:140}, () => {
+      scratch.event_whenbroadcastreceived({BROADCAST_OPTION:"描画"});
+      scratch.motion_setx({X:77});
+    });`);
+    await page.locator('#validate').click();
+    assert.match(await page.locator('#preview').innerText(), /新しく作るメッセージ：1個/);
+    await page.locator('#apply').click();
+    await page.waitForFunction(() => document.querySelector('#status').textContent.includes('反映しました'));
+
+    const rendered = await page.evaluate(() => {
+        const {vm, getController} = document.querySelector('#scratch-frame').contentWindow.scratchNative;
+        const workspace = getController().workspace;
+        return Object.values(vm.editingTarget.blocks._blocks)
+            .filter(block => !workspace.getBlockById(block.id))
+            .map(block => block.opcode);
+    });
+    assert.deepEqual(rendered, [], 'Every applied block must appear in the Scratch workspace');
+
+    await page.frameLocator('#scratch-frame').locator('[class*="green-flag_green-flag_"]').click();
+    await page.waitForFunction(() => document.querySelector('#scratch-frame').contentWindow.scratchNative.vm.editingTarget.x === 77);
+});
