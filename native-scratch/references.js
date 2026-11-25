@@ -40,7 +40,8 @@ export function planReferences(vm,target,graph,{uid=()=>crypto.randomUUID()}={})
     reserved.add(id);variable={id,name,type,target:owner};pending.push(variable);
    }
   }
-  field.id=variable.id;if(type!=='broadcast_msg')field.variableType=type;
+  field.id=variable.id;
+  field.variableType=type;
  }
  return pending;
 }
