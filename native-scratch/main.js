@@ -21,7 +21,15 @@ let studentMode=true,preview=null,repairText="",repairOpcodes=[];
 const recoveryStore=new RecoveryStore();
 let checkpointQueue=Promise.resolve(),backupTimer,revision=0,savedRevision=0,restoring=false,operationBusy=false,connectedVM;
 let vm,native,controller,currentId,base={},updating=false,dirty=false,timer,changeTimer,undoStack=[],schemaCache=new Map(),drafts=new Map();
-const editor=new EditorView({state:EditorState.create({doc:'',extensions:[basicSetup,correspondenceField,EditorView.domEventHandlers({click:event=>{correspondence.click(event);return false;}}),javascript(),EditorView.lineWrapping,syntaxHighlighting(HighlightStyle.define([{tag:tags.keyword,color:'#c6a0f6'},{tag:tags.string,color:'#a6da95'},{tag:tags.number,color:'#f5a97f'},{tag:tags.comment,color:'#75839e'},{tag:tags.function(tags.variableName),color:'#8bd5ff'}])),EditorView.theme({'&':{backgroundColor:'#182030',color:'#e2e8f0'},'.cm-scroller':{fontFamily:'Consolas,monospace',fontSize:'14px',lineHeight:'1.75'},'.cm-gutters':{backgroundColor:'#182030',color:'#71809b',border:0},'.cm-activeLine':{backgroundColor:'#ffffff08'},'.cm-activeLineGutter':{backgroundColor:'#ffffff08'},'.cm-selectionBackground, &.cm-focused .cm-selectionBackground':{backgroundColor:'#4c4674'},'.cm-cursor':{borderLeftColor:'#c6a0f6'}},{dark:true}),keymap.of([{key:'Mod-Enter',run:()=>{studentMode?validate():apply();return true;}}]),EditorView.updateListener.of(u=>{if(u.docChanged&&!updating){draftChanged();}})]}),parent:$('#editor')});
+function setScriptReady(ready){
+ $('#editor').inert=!ready;
+ for(const control of document.querySelectorAll('#validate, #demo, #verify, #save-code, #copy-guide, #save-spec, #mode')){
+  control.disabled=!ready;
+ }
+}
+setScriptReady(false);
+const editorExtensions=[basicSetup,correspondenceField,EditorView.domEventHandlers({click:event=>{correspondence.click(event);return false;}}),javascript(),EditorView.lineWrapping,syntaxHighlighting(HighlightStyle.define([{tag:tags.keyword,color:'#c6a0f6'},{tag:tags.string,color:'#a6da95'},{tag:tags.number,color:'#f5a97f'},{tag:tags.comment,color:'#75839e'},{tag:tags.function(tags.variableName),color:'#8bd5ff'}])),EditorView.theme({'&':{backgroundColor:'#182030',color:'#e2e8f0'},'.cm-scroller':{fontFamily:'Consolas,monospace',fontSize:'14px',lineHeight:'1.75'},'.cm-gutters':{backgroundColor:'#182030',color:'#71809b',border:0},'.cm-activeLine':{backgroundColor:'#ffffff08'},'.cm-activeLineGutter':{backgroundColor:'#ffffff08'},'.cm-selectionBackground, &.cm-focused .cm-selectionBackground':{backgroundColor:'#4c4674'},'.cm-cursor':{borderLeftColor:'#c6a0f6'}},{dark:true}),keymap.of([{key:'Mod-Enter',run:()=>{studentMode?validate():apply();return true;}}]),EditorView.updateListener.of(u=>{if(u.docChanged&&!updating){draftChanged();}})];
+const editor=new EditorView({state:EditorState.create({extensions:editorExtensions}),parent:$('#editor')});
 const correspondence=connectCorrespondence({editor,getNative:()=>native,isDirty:()=>dirty,getTargetId:()=>currentId});
 function withWorkspaceEventsPaused(action){
  const events=native.getController().ScratchBlocks.Events;events.disable();
@@ -29,12 +37,31 @@ function withWorkspaceEventsPaused(action){
 }
 function generateCode(target){const mapping=exportCodeWithMap(base,target.blocks._scripts,target.id);setCode(mapping.code);correspondence.update(mapping);}
 function status(text,kind='ok'){$('#status').textContent=text;$('#status').dataset.kind=kind;}
-function setCode(code){correspondence.clear();updating=true;editor.dispatch({changes:{from:0,to:editor.state.doc.length,insert:code}});updating=false;foldMetadata();}
+function setCode(source){
+ correspondence.clear();
+ // Live drafts carry their own undo history. Recovered files contain only text.
+ if(source instanceof EditorState){
+  editor.setState(source);
+ }else{
+  editor.setState(EditorState.create({doc:source,extensions:editorExtensions}));
+  foldMetadata();
+ }
+}
 function foldMetadata(){const source=editor.state.doc.toString();const effects=[...source.matchAll(/\/\*@scratch [\s\S]*?\*\//g)].map(m=>foldEffect.of({from:m.index+2,to:m.index+m[0].length-2}));if(effects.length)editor.dispatch({effects});}
 function refresh(){
  if(!vm?.editingTarget)return;
+ if($('#editor').inert)setScriptReady(true);
  const target=vm.editingTarget;let changed=false;
- if(currentId!==target.id){invalidatePreview();clearTimeout(timer);if(dirty&&currentId)drafts.set(currentId,editor.state.doc.toString());currentId=target.id;schemaCache.clear();dirty=drafts.has(currentId);base=structuredClone(target.blocks._blocks);if(dirty)setCode(drafts.get(currentId));else generateCode(target);changed=true;}
+ if(currentId!==target.id){
+  invalidatePreview();clearTimeout(timer);
+  repairText='';repairOpcodes=[];$('#copy-repair').hidden=true;
+  if(dirty&&currentId)drafts.set(currentId,editor.state);
+  currentId=target.id;schemaCache.clear();dirty=drafts.has(currentId);base=structuredClone(target.blocks._blocks);
+  if(dirty){
+   setCode(drafts.get(currentId));status('未反映のコードがあります。「検証」で確認してください','pending');
+  }else generateCode(target);
+  changed=true;
+ }
  else if(!dirty){base=structuredClone(target.blocks._blocks);const mapping=exportCodeWithMap(base,target.blocks._scripts,target.id);if(editor.state.doc.toString()!==mapping.code){setCode(mapping.code);changed=true;}correspondence.update(mapping);}
  if(preview&&preview.context!==targetContext(target))invalidatePreview();
  $('#target').textContent=`${target.isStage?'ステージ':'スプライト'}: ${target.getName()} · ${Object.keys(target.blocks._blocks).length} ブロック`;
@@ -87,6 +114,10 @@ function validateConnections(graph){
   const preserved=def.dynamicMenus?.includes(name)&&original?.opcode===b.opcode&&String(original.fields[name]?.value)===value;
   if(options.length&&!options.includes(value)&&!preserved){const error=new Error(`${graph.lines[b.id]}行目: 命令「${b.opcode}」の「${name}」に値「${value}」は使えません。使える値: ${options.map(v=>JSON.stringify(v)).join('、')}`);error.code='INVALID_MENU';error.opcode=b.opcode;throw error;}
  }
+ const parent=graph.blocks[b.parent];
+ if(parent?.next===b.id&&!def.previous){
+  fail(b,def.output?`「${b.opcode}」は値を返すブロックです。ほかの命令の引数に入れるか、単独で置いてください`:`「${b.opcode}」は別のスクリプトの先頭に置いてください`);
+ }
  if(b.next&&!def.next)fail(b,`「${b.opcode}」の下には命令をつなげられません。次の命令を別のスクリプトに分けてください`);
  for(const [name,i] of Object.entries(b.inputs)){const child=graph.blocks[i.block];if(!child)continue;const childDef=schema(child.opcode,{mutation:child.mutation});if(def.inputs[name]?.statement){if(!childDef?.previous)fail(b,`「${b.opcode}」の引数「${name}」に「${child.opcode}」は使えません。命令ブロックを指定してください`);}else if(!childDef?.output)fail(b,`「${b.opcode}」の引数「${name}」に命令「${child.opcode}」は使えません。数値・文字列・値を返すブロックを指定してください`);}
  }
@@ -98,7 +129,7 @@ function invalidatePreview(){preview=null;$('#preview').hidden=true;$('#apply').
 function draftChanged(){
  correspondence.clear(false);
  revision++;scheduleCheckpoint();
- dirty=true;drafts.set(currentId,editor.state.doc.toString());invalidatePreview();repairText='';$('#copy-repair').hidden=true;
+ dirty=true;drafts.set(currentId,editor.state);invalidatePreview();repairText='';$('#copy-repair').hidden=true;
  status('コードはまだ反映されていません。「検証」で確認してください','pending');
  clearTimeout(timer);if(!studentMode&&$('#auto-sync').checked)timer=setTimeout(apply,700);
 }
@@ -145,7 +176,7 @@ async function apply(){
   undoStack.push(snapshot);if(undoStack.length>30)undoStack.shift();
   updating=false;dirty=false;schemaCache.clear();drafts.delete(currentId);base=structuredClone(target.blocks._blocks);invalidatePreview();
   generateCode(target);status('⇄ ScriptをScratch本体へ反映しました');$('#target').textContent=(target.isStage?'ステージ':'スプライト')+': '+target.getName()+' · '+Object.keys(base).length+' ブロック';return true;
- }catch(error){updating=false;dirty=true;drafts.set(currentId,editor.state.doc.toString());invalidatePreview();showError(error);return false;}finally{operationBusy=false;}
+ }catch(error){updating=false;dirty=true;drafts.set(currentId,editor.state);invalidatePreview();showError(error);return false;}finally{operationBusy=false;}
 }
 $('#mode').onchange=()=>{studentMode=$('#mode').value==='student';clearTimeout(timer);$('#auto-sync').checked=false;$('#auto-sync').disabled=studentMode;invalidatePreview();$('#mode-help').textContent=studentMode?'貼り付け → 検証 → 反映。実行は緑の旗。':'自動反映は選択したときだけ有効です。';status(studentMode?'生徒モードです。コードは検証してから反映します':'先生・開発モードです。必要に応じて自動反映を選べます');};
 $('#auto-sync').onchange=()=>{clearTimeout(timer);if(!studentMode&&$('#auto-sync').checked&&dirty)timer=setTimeout(apply,700);};
@@ -158,7 +189,12 @@ window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==
  const connectedNative=native,emitWorkspace=vm.emitWorkspaceUpdate;
  vm.emitWorkspaceUpdate=function(...args){return withWorkspaceReferenceIds(this,connectedNative.getController()?.workspace,()=>emitWorkspace.apply(this,args));};
  installRecovery();
- const changed=()=>{if(updating)return;clearTimeout(changeTimer);changeTimer=setTimeout(refresh,180);};
+ const changed=()=>{
+  if(updating)return;
+  if(preview&&vm.editingTarget?.id!==currentId)invalidatePreview();
+  if(changeTimer)return;
+  changeTimer=setTimeout(()=>{changeTimer=null;refresh();},180);
+ };
  vm.runtime.on('PROJECT_CHANGED',changed);vm.on('targetsUpdate',changed);vm.on('workspaceUpdate',changed);vm.on('BLOCKSINFO_UPDATE',()=>{schemaCache.clear();changed();});
  vm.runtime.on('PROJECT_LOADED',()=>{correspondence.clear();drafts.clear();currentId=null;dirty=false;undoStack=[];invalidatePreview();changed();});
  native.state.store.subscribe(changed);refresh();
@@ -170,14 +206,14 @@ $('#undo').onclick=()=>{
  operationBusy=true;
  try{
   vm.setEditingTarget(target.id);updating=true;const retained=withWorkspaceEventsPaused(()=>undoGraph(vm,target,item));undoStack.pop();
-  updating=false;dirty=false;schemaCache.clear();drafts.delete(target.id);currentId=null;invalidatePreview();refresh();
-  status('前のScratchブロックに戻しました'+(retained.length?'。別の処理で使われている、または名前を変更した変数・リストなどは残しました。':''));
+  updating=false;dirty=false;schemaCache.clear();currentId=null;invalidatePreview();refresh();
+  status('前のScratchブロックに戻しました。'+(dirty?'編集中のコードは下書きとして残っています。':'')+(retained.length?'別の処理で使われている、または名前を変更した変数・リストなどは残しました。':''));
  }catch(error){updating=false;showError(error);}finally{operationBusy=false;}
 };
 $('#metadata').onclick=()=>{unfoldAll(editor);};
 $('#demo').onclick=()=>{
  if(!vm?.editingTarget)return;const source=`scratch.script({x: 60, y: 60}, () => {\n  scratch.event_whenflagclicked({});\n  scratch.looks_say({MESSAGE: "本物のScratchと連動したよ！"});\n  scratch.control_repeat({TIMES: 10, SUBSTACK: () => {\n    scratch.motion_movesteps({STEPS: 10});\n    scratch.motion_turnright({DEGREES: 15});\n    scratch.control_wait({DURATION: 0.15});\n  }});\n});`;
- setCode(editor.state.doc.toString()+'\n\n'+source);draftChanged();validate();
+ editor.dispatch({changes:{from:editor.state.doc.length,insert:(editor.state.doc.length?'\n\n':'')+source}});validate();
 };
 $('#verify').onclick=()=>{try{let count=0;for(const target of vm.runtime.targets.filter(t=>t.isOriginal)){
  const original=structuredClone(target.blocks._blocks),text=exportCode(original,target.blocks._scripts),graph=compileCode(text,{base:original,schema});
@@ -218,7 +254,9 @@ function saveCheckpoint(reason){
  const work=async()=>{
   if(!vm?.editingTarget)throw new Error('作品の準備ができていません');
   const capturedRevision=revision,targets=vm.runtime.targets.filter(t=>t.isOriginal);
-  const entries=captureDrafts(targets,drafts,currentId);
+  const sources=new Map();
+  for(const [id,draft] of drafts)sources.set(id,draft instanceof EditorState?draft.doc.toString():draft);
+  const entries=captureDrafts(targets,sources,currentId);
   const sb3=await vm.saveProjectSb3();
   const snapshot=await recoveryStore.save({formatVersion:1,createdAt:Date.now(),reason,sb3,entries});
   savedRevision=capturedRevision;backupStatus('このブラウザーに保存済み: '+new Date(snapshot.createdAt).toLocaleTimeString('ja-JP')+'（.sb3ファイルも保存してください）');return snapshot;
