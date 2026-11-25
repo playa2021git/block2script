@@ -32,6 +32,7 @@ jobs:
         run: |
           node scripts/serve-pages.mjs &
           node stretch3-base/brand.test.mjs
+          node stretch3-base/student-editing.test.mjs
           node stretch3-base/pages-smoke.test.mjs
           node stretch3-base/correspondence.test.mjs
           node stretch3-base/chromebook-priority-a.test.mjs
