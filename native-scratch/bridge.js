@@ -134,6 +134,11 @@ export function compileCode(code,{base={},schema=()=>null,knownOpcodes=[],uid=()
      Object.assign(shadowBlock,{id:child,parent:id,next:null,topLevel:false,shadow:true});shadowBlock.fields[fieldName]={...shadowBlock.fields[fieldName],name:fieldName,value:v};result[child]=shadowBlock;shadow=child;
     }
    }
+   // Scratch reads a broadcast dropdown directly from the input's shadow.
+   if(key==='BROADCAST_INPUT'&&result[child]?.opcode==='event_broadcast_menu'){
+    result[child].shadow=true;
+    shadow=child;
+   }
    b.inputs[key]={name:key,block:child,shadow:shadow??null};
   }
   for(const [key,field] of Object.entries(b.fields)){if(referenceType(opcode,key)===null)continue;
