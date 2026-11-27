@@ -17,9 +17,11 @@
 
 ## 1. 現行の実行経路
 
+実装照合: `a94b060`。上記のSHAは、変数・リスト自動作成を導入した版と辞書を採取した版の記録。
+
 `.github/workflows/pages.yml` → `scripts/build-pages.mjs` → `stretch3-base/build.mjs` / `prepare.mjs` → `native-scratch/build.mjs` → ルート `index.html` → `native-scratch/main.js` → 同一オリジンiframe内のStretch3 VM・workspace。
 Scriptの文字列をJSとしてevalするのではなく、`bridge.js` がAcorn ASTをScratchブロックグラフへ変換し、`main.js` が検証して `applyGraph` でVMへ反映する。
-公開サイトの `source/bridge.js` / `source/main.js` は対象SHAのファイルとSHA-256一致。公開サイト全体のデプロイSHAは未取得なので、全配信物のコミット一致とは断定しない。
+従来の照合では、公開サイトの `source/bridge.js` / `source/main.js` が運用更新対象SHA（`9483f68`）のファイルとSHA-256で一致した。公開サイト全体のデプロイSHAは未取得なので、全配信物のコミット一致とは断定しない。
 
 旧 `src/main.js` / `src/model.js` / `src/runtime.js` は現行の起動経路ではない。
 `whenGreenFlag(async () => {...})`、`repeat(n, async()=>{})`、JSのif等を現行へ混入させない。`DEVELOPMENT_AUDIT.md` 自体も旧基盤の記録と明記している。
@@ -86,7 +88,7 @@ scratch.script({x:40,y:40},()=>{
 
 ## 5. 変数・リスト・メッセージ
 
-必要な変数／リストは別途手入力不要。VARIABLE／LISTへ名前を指定し、検証の作成予定を確認してから反映する。JSのletや配列変数を宣言しない。事前の手動作成を要求せず、検証で変数1個・リスト1個（メッセージは別枠）の作成予定を確認できること。参照解決は `normalizeReferences` から呼ぶ `planReferences` が名前・型・IDで行う。メッセージはbroadcast_msg型でステージに置かれ、不足分は反映時の自動作成対象。
+必要な変数／リストは別途手入力不要。VARIABLE／LISTへ名前を指定し、検証の作成予定を確認してから反映する。JSのletや配列変数を宣言しない。参照解決は `normalizeReferences` から呼ぶ `planReferences` が名前・型・IDで行う。メッセージはbroadcast_msg型でステージに置かれ、不足分は反映時の自動作成対象。
 
 ```javascript
 scratch.script({x:40,y:40},()=>{
@@ -103,7 +105,7 @@ scratch.script({x:300,y:40},()=>{
 ```
 
 指定する名前は変数「回数」とリスト「記録」。未作成なら反映時に自動作成される。同名のローカル／グローバル変数がある場合は元のメタ情報・IDを保持して確認する。
-メッセージの受信イベント `BROADCAST_OPTION` と送信入力 `BROADCAST_INPUT` を混同しない。
+受信イベントの `BROADCAST_OPTION` と送信入力の `BROADCAST_INPUT` を区別する。送信の `event_broadcast_menu` は現行版でScratchのドロップダウン用シャドーとして変換される。上記の記法はそのまま使える。
 
 ## 6. 拡張とメニュー・コメント
 

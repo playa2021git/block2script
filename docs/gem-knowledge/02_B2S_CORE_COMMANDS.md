@@ -49,8 +49,8 @@
 
 - `argument_editor_boolean` — 独自ブロック編集用の内部定義。既存mutation等の情報なしに生成しない。
 - `argument_editor_string_number` — 独自ブロック編集用の内部定義。既存mutation等の情報なしに生成しない。
-- `argument_reporter_boolean` — ???
-- `argument_reporter_string_number` — ???
+- `argument_reporter_boolean` — 独自ブロック内で真偽値の引数を参照する
+- `argument_reporter_string_number` — 独自ブロック内で文字列・数値の引数を参照する
 
 ### `argument_editor_boolean`
 
@@ -106,7 +106,7 @@ scratch.script({x:30,y:30},()=>{scratch.looks_say({MESSAGE:scratch["argument_edi
 
 ### `argument_reporter_boolean`
 
-意味: ???。
+意味: 独自ブロック内で真偽値の引数を参照する。
 
 - 正式opcode: `argument_reporter_boolean`
 - 種類: 条件（Boolean）。出力接続チェック: `null`。前接続: `false`／次接続: `false`。
@@ -132,7 +132,7 @@ scratch.script({x:30,y:30},()=>{scratch.looks_say({MESSAGE:scratch["argument_rep
 
 ### `argument_reporter_string_number`
 
-意味: ???。
+意味: 独自ブロック内で文字列・数値の引数を参照する。
 
 - 正式opcode: `argument_reporter_string_number`
 - 種類: 値（レポーター）。出力接続チェック: `null`。前接続: `false`／次接続: `false`。
@@ -686,14 +686,14 @@ scratch.script({x:30,y:30},()=>{scratch["control_while"]({"CONDITION":scratch.op
 - `data_itemoflist` — ? の ? 番目
 - `data_lengthoflist` — ? の長さ
 - `data_listcontainsitem` — ? に ? が含まれる
-- `data_listcontents` — ???
+- `data_listcontents` — 指定したリストの内容を返す
 - `data_listindexall` — 1
 - `data_listindexrandom` — 1
 - `data_replaceitemoflist` — ? の ? 番目を ? で置き換える
 - `data_setvariableto` — ? を ? にする
 - `data_showlist` — リスト ? を表示する
 - `data_showvariable` — 変数 ? を表示する
-- `data_variable` — ???
+- `data_variable` — 指定した変数の値を返す
 
 ### `data_addtolist`
 
@@ -991,7 +991,7 @@ scratch.script({x:30,y:30},()=>{scratch.looks_say({MESSAGE:scratch["data_listcon
 
 ### `data_listcontents`
 
-意味: ???。
+意味: 指定したリストの内容を返す。
 
 - 正式opcode: `data_listcontents`
 - 種類: 値（レポーター）。出力接続チェック: `null`。前接続: `false`／次接続: `false`。
@@ -1176,7 +1176,7 @@ scratch.script({x:30,y:30},()=>{scratch["data_showvariable"]({"VARIABLE":"Gem検
 
 ### `data_variable`
 
-意味: ???。
+意味: 指定した変数の値を返す。
 
 - 正式opcode: `data_variable`
 - 種類: 値（レポーター）。出力接続チェック: `null`。前接続: `false`／次接続: `false`。
@@ -2622,11 +2622,11 @@ scratch.script({x:30,y:30},()=>{scratch.looks_say({MESSAGE:scratch["math_whole_n
 
 ## 補助定義 matrix（1定義）
 
-- `matrix` — 入力値を表す補助ブロック。表示名: ???
+- `matrix` — LEDマトリクスの入力値を表す補助ブロック
 
 ### `matrix`
 
-意味: 入力値を表す補助ブロック。表示名: ???。
+意味: LEDマトリクスの入力値を表す補助ブロック。
 
 - 正式opcode: `matrix`
 - 種類: 値（レポーター）。出力接続チェック: `null`。前接続: `false`／次接続: `false`。
@@ -3883,14 +3883,14 @@ scratch.script({x:30,y:30},()=>{scratch.looks_say({MESSAGE:scratch["operator_sub
 
 ## 独自ブロック（4定義）
 
-- `procedures_call` — ???
+- `procedures_call` — 既存の定義と引数に従って独自ブロックを呼び出す
 - `procedures_declaration` — 独自ブロック編集用の内部定義。既存mutation等の情報なしに生成しない。
 - `procedures_definition` — 定義 ?
 - `procedures_prototype` — 独自ブロック編集用の内部定義。既存mutation等の情報なしに生成しない。
 
 ### `procedures_call`
 
-意味: ???。
+意味: 既存の定義と引数に従って独自ブロックを呼び出す。
 
 - 正式opcode: `procedures_call`
 - 種類: 命令（stack）。出力接続チェック: `null`。前接続: `true`／次接続: `true`。
